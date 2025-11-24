@@ -1,4 +1,4 @@
-package service;
+package com.zoplanner.notification.service;
 
 public class NotificationTemplate {
 
