@@ -1,0 +1,65 @@
+{
+  "$schema": "https://json-schema.org/draft/2020/12/schema",
+  "$id": "https://example.com/schemas/schedule-updated.json",
+  "title": "Schedule Update Event",
+  "type": "object",
+  "required": [
+    "eventType",
+    "eventId",
+    "timestamp",
+    "teacherId",
+    "teacherEmail",
+    "changes"
+  ],
+  "properties": {
+    "eventType": {
+      "type": "string",
+      "const": "SCHEDULE_UPDATED"
+    },
+    "eventId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "teacherId": {
+      "type": "string"
+    },
+    "teacherEmail": {
+      "type": "string",
+      "format": "email"
+    },
+    "teacherPhone": {
+      "type": "string",
+      "description": "Phone number of the teacher if SMS notifications are enabled"
+    },
+    "changes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["lessonId", "changeType"],
+        "properties": {
+          "lessonId": {
+            "type": "string"
+          },
+          "changeType": {
+            "type": "string",
+            "enum": ["ADDED", "REMOVED", "TIME_UPDATED", "LOCATION_UPDATED"]
+          },
+          "oldValue": {
+            "type": "string"
+          },
+          "newValue": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "source": {
+      "type": "string",
+      "description": "Why whas there a change"
+    }
+  }
+}
