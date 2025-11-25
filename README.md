@@ -1,2 +1,153 @@
-# zoplanner-notificationservice
-Notifikationstjänst som skickar ut mejl till lärare om uppdrag, scheman, ändringar, byggd i Java.
+# Notification Service
+
+En Spring Boot-baserad notifikationstjänst (Java) för att skicka och hantera notiser.
+Denna README är skapad för user storyn: **"Som utvecklare vill jag ha väldokumenterad kod i en README så att andra kan bygga vidare i framtiden."**
+
+## Översikt
+- **Språk/ramverk:** Java, Spring Boot
+- **Bygg:** Maven
+- **Paket-rotnamn:** `com.zoplanner.notification`
+- **Moduler (utifrån befintliga filer):**
+    - `controller`: REST-kontrollers (t.ex. `NotificationController`)
+    - `config`: Konfiguration (t.ex. `AwsConfig`)
+    - `repository`: Persistens/DB-repositories (t.ex. `NotificationRepository`)
+    - `dto`: Data Transfer Objects (t.ex. `NotificationDTO`)
+    - `model/entity`: Domänklass(er) (t.ex. `Notification`)
+    - `template`: Mallhantering (t.ex. `NotificationTemplate`)
+
+> **Notera:** `NotificationController` är i nuläget tom — fyll på med endpoints enligt behov (se mall nedan).
+
+## Kom igång (lokalt)
+Förutsätter att du har **Java 21+** och **Maven 3.9+** installerat.
+
+```bash
+# 1) Bygg och kör tester
+./mvnw clean verify   # eller: mvn clean verify
+
+# 2) Starta applikationen
+./mvnw spring-boot:run   # eller: mvn spring-boot:run
+
+# Applikationen körs vanligtvis på: http://localhost:8080
+```
+
+### Kör som JAR
+```bash
+./mvnw clean package
+java -jar target/*.jar
+```
+
+## Konfiguration (miljövariabler/properties)
+Lägg till/ändra `application.yml` eller `application.properties` enligt ert behov.
+
+Exempelvärden (lägg i `application-local.yml` om ni använder profiler):
+```yaml
+server:
+  port: 8080
+
+spring:
+  application:
+    name: notification-service
+  datasource:
+    url: jdbc:postgresql://localhost:5432/notifications
+    username: notif
+    password: notif
+  jpa:
+    hibernate:
+      ddl-auto: validate
+
+logging:
+  level:
+    root: INFO
+```
+
+## Projektstruktur (exempel)
+```
+src/
+ └── main/
+     ├── java/com/zoplanner/notification/
+     │   ├── NotificationServiceApplication.java
+     │   ├── config/
+     │   │   └── AwsConfig.java
+     │   ├── controller/
+     │   │   └── NotificationController.java
+     │   ├── dto/
+     │   │   └── NotificationDTO.java
+     │   ├── model/         # eller entity/
+     │   │   └── Notification.java
+     │   ├── repository/
+     │   │   └── NotificationRepository.java
+     │   └── template/
+     │       └── NotificationTemplate.java
+     └── resources/
+         ├── application.yml
+         └── db/migration/   # Flyway-migreringar (om ni använder)
+```
+
+## Exempel på REST-endpoints (mall)
+> Lägg i `NotificationController` (anpassa efter behov)
+```java
+@RestController
+@RequestMapping("/api/notifications")
+@RequiredArgsConstructor
+public class NotificationController {
+
+  private final NotificationService service;
+
+  @PostMapping
+  public ResponseEntity<NotificationDTO> create(@RequestBody @Valid NotificationDTO dto) {
+    var created = service.create(dto);
+    return ResponseEntity.status(HttpStatus.CREATED).body(created);
+  }
+
+  @GetMapping(params = "userId")
+  public Page<NotificationDTO> listByUser(@RequestParam String userId,
+                                          @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
+    return service.listByUser(userId, pageable);
+  }
+
+  @PatchMapping("/{id}/read")
+  public ResponseEntity<Void> markAsRead(@PathVariable UUID id) {
+    service.markAsRead(id);
+    return ResponseEntity.noContent().build();
+  }
+}
+```
+
+## Kodstil & konventioner
+- Paketstruktur enligt ovan.
+- DTOs endast för in/ut ur kontroller.
+- Services för affärslogik; Repositories för DB.
+- Exception-hantering med `@ControllerAdvice` (lägg till vid behov).
+- Loggning med korrelations-ID (`requestId`, `eventId`) där det är relevant.
+
+## Arbetsflöde (issue → branch → PR → merge)
+1. Skapa **Issue** i GitHub för user storyn.
+2. Skapa branch från `main`: `feature/readme-dokumentation-#<issueNr>`
+3. Uppdatera/skriv `README.md` (denna fil).
+4. Commit & push (se kommandon nedan).
+5. Skapa **Pull Request** och länka issue (`Closes #<issueNr>`).
+6. Få review, säkerställ grön CI, **Squash & merge**.
+
+### Git-kommandon
+```bash
+# Skapa branch (ersätt <issueNr>)
+git checkout -b feature/readme-dokumentation-#<issueNr>
+
+# Lägg till README och committa
+git add README.md
+git commit -m "docs(readme): lägg till/uppdatera projekt-README (#<issueNr>)"
+
+# Pusha branchen
+git push -u origin feature/readme-dokumentation-#<issueNr>
+```
+
+## PR-checklista (Definition of Done för denna user story)
+- [ ] README beskriver **hur man kör** lokalt (kommandon).
+- [ ] README beskriver **projektstruktur** (paket, viktiga klasser).
+- [ ] README visar **exempel-endpoints** eller länkar till OpenAPI.
+- [ ] README listar **konfiguration** (port, DB, profiler) eller hänvisar.
+- [ ] Stavning/format OK; rubriker och kodblock fungerar i GitHub.
+- [ ] PR-texten länkar issue: `Closes #<issueNr>`.
+
+## Licens
+
