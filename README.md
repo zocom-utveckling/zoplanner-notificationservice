@@ -9,11 +9,10 @@ Denna README är skapad för user storyn: **"Som utvecklare vill jag ha väldoku
 - **Paket-rotnamn:** `com.zoplanner.notification`
 - **Moduler (utifrån befintliga filer):**
     - `controller`: REST-kontrollers (t.ex. `NotificationController`)
-    - `config`: Konfiguration (t.ex. `AwsConfig`)
     - `repository`: Persistens/DB-repositories (t.ex. `NotificationRepository`)
     - `dto`: Data Transfer Objects (t.ex. `NotificationDTO`)
-    - `model/entity`: Domänklass(er) (t.ex. `Notification`)
-    - `template`: Mallhantering (t.ex. `NotificationTemplate`)
+    - `model`: Domänklass(er) (t.ex. `Notification`)
+    - `service`: Tjänstelogik (t.ex. `NotificationTemplate`)
 
 > **Notera:** `NotificationController` är i nuläget tom — fyll på med endpoints enligt behov (se mall nedan).
 
@@ -36,19 +35,67 @@ Förutsätter att du har **Java 21+** och **Maven 3.9+** installerat.
 java -jar target/*.jar
 ```
 
+## Kör med Docker
+
+### Snabbstart med Docker
+
+```bash
+# 1) Bygg JAR-filen (skippa tester)
+mvn clean package -DskipTests
+
+# 2) Starta container med docker-compose
+docker-compose up -d --build
+
+# 3) Kontrollera status
+docker-compose ps
+
+# 4) Se loggar
+docker-compose logs -f
+```
+
+Applikationen körs nu på: http://localhost:8081
+
+### Docker-kommandon
+
+Se [DOCKER_README.md](DOCKER_README.md) för fullständig dokumentation av Docker-kommandon.
+
+**Vanligaste kommandona:**
+- Starta: `docker-compose up -d`
+- Stoppa: `docker-compose down`
+- Rebuilda efter kodändringar: `mvn clean package -DskipTests && docker-compose up -d --build`
+- Visa loggar: `docker-compose logs -f notification-service`
+
+### Integration med huvudprojektet
+
+För att köra notification service tillsammans med andra ZoPlanner-services, se [INTEGRATION_README.md](INTEGRATION_README.md).
+
+### Docker-filer
+
+- **Dockerfile** - Container-definition för notification service
+- **docker-compose.yml** - Orkestreringsmönster för lokal utveckling
+- **.dockerignore** - Exkluderar onödiga filer från Docker-bygget
+- **.env.example** - Mall för miljövariabler (kopiera till `.env`)
+
 ## Konfiguration (miljövariabler/properties)
-Lägg till/ändra `application.yml` eller `application.properties` enligt ert behov.
+Lägg till/ändra `application.properties` enligt ert behov.
 
-Exempelvärden (lägg i `application-local.yml` om ni använder profiler):
-```yaml
-server:
-  port: 8080
+### Lokalt (application.properties)
+```properties
+server.port=8080
+spring.application.name=notification-service
 
-spring:
-  application:
-    name: notification-service
-  datasource:
-    url: jdbc:postgresql://localhost:5432/notifications
+# AWS SES Configuration
+aws.region=eu-north-1
+aws.accessKeyId=your_key
+aws.secretAccessKey=your_secret
+ses.from.email=noreply@example.com
+```
+
+### Docker (med .env fil)
+Använder samma `application.properties` men läser värden från `.env` fil:
+```bash
+cp .env.example .env
+# Redigera .env med dina AWS-credentials
     username: notif
     password: notif
   jpa:
