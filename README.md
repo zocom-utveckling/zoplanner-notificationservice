@@ -9,11 +9,10 @@ Denna README är skapad för user storyn: **"Som utvecklare vill jag ha väldoku
 - **Paket-rotnamn:** `com.zoplanner.notification`
 - **Moduler (utifrån befintliga filer):**
     - `controller`: REST-kontrollers (t.ex. `NotificationController`)
-    - `config`: Konfiguration (t.ex. `AwsConfig`)
     - `repository`: Persistens/DB-repositories (t.ex. `NotificationRepository`)
     - `dto`: Data Transfer Objects (t.ex. `NotificationDTO`)
-    - `model/entity`: Domänklass(er) (t.ex. `Notification`)
-    - `template`: Mallhantering (t.ex. `NotificationTemplate`)
+    - `model`: Domänklass(er) (t.ex. `Notification`)
+    - `service`: Tjänstelogik (t.ex. `NotificationTemplate`)
 
 > **Notera:** `NotificationController` är i nuläget tom — fyll på med endpoints enligt behov (se mall nedan).
 
