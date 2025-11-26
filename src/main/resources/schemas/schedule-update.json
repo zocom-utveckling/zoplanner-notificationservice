@@ -1,5 +1,5 @@
 {
-  "$schema": "https://json-schema.org/draft/2020/12/schema",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://example.com/schemas/schedule-updated.json",
   "title": "Schedule Update Event",
   "type": "object",
@@ -14,7 +14,7 @@
   "properties": {
     "eventType": {
       "type": "string",
-      "const": "SCHEDULE_UPDATED"
+      "enum": ["SCHEDULE_UPDATED"]
     },
     "eventId": {
       "type": "string",
