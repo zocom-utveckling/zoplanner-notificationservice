@@ -32,3 +32,6 @@ Thumbs.db
 .env
 application-local.properties
 
+# Documentation (excluded from Git)
+DOCKER_README.md
+
