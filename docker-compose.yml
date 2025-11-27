@@ -1,0 +1,17 @@
+version: '3.8'
+
+services:
+  # Notification Service
+  notification-service:
+    build: .
+    container_name: zoplanner-notification-service
+    networks:
+      - zoplanner
+    ports:
+      - "8080:8080"
+    restart: unless-stopped
+
+networks:
+  zoplanner:
+    driver: bridge
+

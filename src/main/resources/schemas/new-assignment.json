@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/schema/new-assignment.json",
+  "title": "New Assignment Event",
+  "type": "object",
+  "required": [
+    "eventType",
+    "eventId",
+    "timestamp",
+    "teacherId",
+    "teacherEmail",
+    "assignmentId",
+    "assignmentDescription"
+  ],
+  "properties": {
+    "eventType": {
+      "type": "string",
+      "enum": ["NEW_ASSIGNMENT"]
+    },
+    "eventId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "teacherId": {
+      "type": "string"
+    },
+    "teacherEmail": {
+      "type": "string",
+      "format": "email"
+    },
+    "assignmentId": {
+      "type": "string"
+    },
+    "assignmentDescription": {
+      "type": "string"
+    },
+    "assignmentDueDate": {
+      "type": "string",
+      "format": "date-time"
+    }
+  }
+}
