@@ -24,10 +24,10 @@ public class NotificationService {
 
         try {
             // Konvertera DTO till Entity som ska sparas
-            Notification notification = new Notification(dto.getMessage(), dto.getRecipient());
+            Notification notification = new Notification(dto.getMessage(), dto.getRecipient()); // TODO: lägg till i NotificationDTO
             log.debug("Notification created: {}", notification); // Visar färdig Entity
 
-            notificationRepository.save(notification);
+            notificationRepository.save(notification); // TODO: lägg till i NotificationRepository
             log.info("Notification saved"); // Övervakning
 
         } catch (Exception e) {
