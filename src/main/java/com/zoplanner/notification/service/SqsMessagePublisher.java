@@ -1,4 +1,4 @@
-package service;
+package com.zoplanner.notification.service;
 
 import software.amazon.awssdk.services.sqs.SqsClient;
 import software.amazon.awssdk.services.sqs.model.SendMessageRequest;
