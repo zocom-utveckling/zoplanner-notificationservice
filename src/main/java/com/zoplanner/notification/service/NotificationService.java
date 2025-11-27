@@ -32,7 +32,6 @@ public class NotificationService {
 
         } catch (Exception e) {
             log.error("Error creating notification", e); // Felsökning
-            throw e; // Skicka vidare exception till controller
         }
     }
 }
