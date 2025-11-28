@@ -10,8 +10,34 @@ services:
     ports:
       - "8080:8080"
     restart: unless-stopped
+    environment:
+      # Database connection
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/zoplanner_notification_service
+      SPRING_DATASOURCE_USERNAME: admin
+      SPRING_DATASOURCE_PASSWORD: password
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      SPRING_JPA_SHOW_SQL: "true"
+
+  # Local Database (PostgreSQL)
+  postgres:
+    image: postgres:16.2-alpine
+    container_name: zoplanner-notification-service-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: zoplanner_notification_service
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: password
+    ports:
+      - "5432:5432"
+    volumes:
+      # Named volume (persistent storage)
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - zoplanner
 
 networks:
   zoplanner:
     driver: bridge
 
+volumes:
+  postgres_data:
