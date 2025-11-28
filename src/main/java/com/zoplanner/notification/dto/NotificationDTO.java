@@ -7,4 +7,9 @@ import lombok.*;
 public class NotificationDTO {
     private String message;
     private String recipient;
+
+    private Long id;
+    private Long userId;
+    private Boolean isRead;         // Visar om det är läst
+    private String createdAt;
 }

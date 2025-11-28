@@ -6,6 +6,8 @@ import com.zoplanner.notification.dto.NotificationDTO;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.util.Optional;
+
 @Slf4j
 @Service
 
@@ -33,5 +35,21 @@ public class NotificationService {
         } catch (Exception e) {
             log.error("Error creating notification", e); // Felsökning
         }
+    }
+
+    // Markera notifikation som läst
+    public NotificationDTO markAsRead(Long notificationId) {
+        Optional<Notification> optionalNotification = notificationRepository.findById(notificationId);  // Hitta notifikationen i databasen
+
+        if (optionalNotification.isEmpty()) {
+            throw new RuntimeException("Notification with id " + notificationId + " not found");  // "Kasta" ett fel om den inte finns
+        }
+
+        Notification notification = optionalNotification.get(); // Hämtar notifikation och ändrar isRead till true
+        notification.setRead(true);
+
+        notificationRepository.save(notification);
+
+        return convertToDTO(notification);
     }
 }
