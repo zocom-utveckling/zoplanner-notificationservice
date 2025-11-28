@@ -1,9 +1,11 @@
 package com.zoplanner.notification.repository;
 
 import com.zoplanner.notification.model.Notification;
+import org.springframework.stereotype.Repository;
+import org.springframework.data.jpa.repository.JpaRepository;
 
-// Tillfälligt för repository, för att kunna köra tester, behöver bytas ut.
+@Repository
 
-public interface NotificationRepository {
-    void save(Notification notification);
+public interface NotificationRepository extends JpaRepository<Notification, Long> {
+
 }
