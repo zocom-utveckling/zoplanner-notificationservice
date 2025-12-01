@@ -1,6 +1,7 @@
 package com.zoplanner.notification.service;
 
 import com.zoplanner.notification.dto.NotificationDTO;
+import com.zoplanner.notification.repository.EmailLogRepository;
 import com.zoplanner.notification.repository.NotificationRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -16,12 +17,13 @@ public class NotificationServiceErrorLoggingTest {
     void testErrorLoggingWhenRepositoryFails(CapturedOutput output) {
 
         //Arrange, mock repository och service
-        NotificationRepository repo = mock(NotificationRepository.class);
-        NotificationService service = new NotificationService(repo);
+        NotificationRepository notificationRepository = mock(NotificationRepository.class);
+        EmailLogRepository emailLogRepository = mock(EmailLogRepository.class);
+        NotificationService service = new NotificationService(notificationRepository,emailLogRepository);
 
         //Gör så att repository skapar exception
         doThrow(new RuntimeException("Database failure"))
-                .when(repo)
+                .when(notificationRepository)
                 .save(any());
 
         //Fake DTO

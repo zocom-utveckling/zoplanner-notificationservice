@@ -1,5 +1,6 @@
 package com.zoplanner.notification.service;
 
+import com.zoplanner.notification.repository.EmailLogRepository;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import com.zoplanner.notification.model.Notification;
@@ -14,8 +15,9 @@ public class NotificationServiceSaveTest {
     void testNotificationObjectPassedToRepository() {
 
         //Arrange
-        NotificationRepository repo = mock(NotificationRepository.class);
-        NotificationService service = new NotificationService(repo);
+        NotificationRepository notificationRepository = mock(NotificationRepository.class);
+        EmailLogRepository emailLogRepository = mock(EmailLogRepository.class);
+        NotificationService service = new NotificationService(notificationRepository,emailLogRepository);
 
         //DTO med fejkdata
         NotificationDTO dto = new NotificationDTO();
@@ -29,7 +31,7 @@ public class NotificationServiceSaveTest {
         service.createNotification(dto);
 
         //Assert
-        verify(repo, times(1)).save(captor.capture());
+        verify(notificationRepository, times(1)).save(captor.capture());
 
         //Hämta objektet som skickades in i repo.save()
         Notification savedNotification = captor.getValue();
