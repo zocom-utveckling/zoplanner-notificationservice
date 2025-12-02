@@ -1,4 +1,4 @@
-package com.zoplanner.notification;
+package com.zoplanner.notification.mock;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
