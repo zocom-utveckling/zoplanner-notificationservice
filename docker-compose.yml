@@ -10,8 +10,12 @@ services:
     ports:
       - "8080:8080"
     restart: unless-stopped
+    volumes:
+      - notification-logs:/app/notification-logs
 
 networks:
   zoplanner:
     driver: bridge
 
+volumes:
+  notification-logs:
