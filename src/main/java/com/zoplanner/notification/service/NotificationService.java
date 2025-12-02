@@ -6,7 +6,9 @@ import com.zoplanner.notification.dto.NotificationDTO;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -51,5 +53,37 @@ public class NotificationService {
         notificationRepository.save(notification);
 
         return convertToDTO(notification);
+    }
+
+    // Hämta alla notifikatioenr för en användare
+    public List<NotificationDTO> getNotificationsByUserId(Long userId) {
+        List<Notification> notifications = notificationRepository.findByUserId(userId);
+
+        // Konvertera alla notifikation entities till DTOs
+        return notifications.stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
+    }
+
+    // HÄmta endast olästa notifikationer för en användare
+    public List<NotificationDTO> getUnreadNotifications(Long userId) {
+        List<Notification> notifications = notificationRepository.findByUserIdAndIsRead(userId, false);
+
+        return notifications.stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
+    }
+
+
+    // Kpnverterar Entity till DTO
+    private NotificationDTO convertToDTO(Notification notification) {
+        NotificationDTO notificationDTO = new NotificationDTO();
+        notificationDTO.setId(notification.getId());
+        notificationDTO.setMessage(notification.getMessage());
+        notificationDTO.setRecipient(notification.getRecipient());
+        notificationDTO.setUserId(notification.getUserId());
+        notificationDTO.setRead(notification.isRead());
+        notificationDTO.setCreatedAt(notification.getCreatedAt());
+        return notificationDTO;
     }
 }
