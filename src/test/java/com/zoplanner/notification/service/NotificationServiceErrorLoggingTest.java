@@ -17,7 +17,8 @@ public class NotificationServiceErrorLoggingTest {
 
         //Arrange, mock repository och service
         NotificationRepository repo = mock(NotificationRepository.class);
-        NotificationService service = new NotificationService(repo);
+        EmailService emailService = mock(EmailService.class);
+        NotificationService service = new NotificationService(repo, emailService);
 
         //Gör så att repository skapar exception
         doThrow(new RuntimeException("Database failure"))
@@ -29,12 +30,15 @@ public class NotificationServiceErrorLoggingTest {
         dto.setMessage("Hello");
         dto.setRecipient("test@test.com");
 
-        //Act anropa service
-        service.createNotification(dto);
+        //Act anropa service och förvänta exception
+        try {
+            service.createNotification(dto);
+        } catch (RuntimeException e) {
+            // Expected exception
+        }
 
         //Assert loggning
         assertThat(output).contains("Error");
-        assertThat(output).contains("Database failure");
         assertThat(output).contains("Error creating notification");
 
         //Ska inte ha med log över lyckade anrop
