@@ -43,12 +43,16 @@ public class NotificationService {
         } catch (Exception e) {
             log.error("Error creating notification", e); // Felsökning
 
+            try {
             notificationAuditLogger.logNotificationSent(
                     dto.getRecipient(),
                     "EMAIL",
                     "GENERIC",
                     false
             );
+        } catch (Exception auditException) {
+                log.error("Failed to write audit log after failure", auditException);
+            }
         }
     }
 }
