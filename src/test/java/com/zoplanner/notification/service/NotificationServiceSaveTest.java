@@ -18,7 +18,8 @@ public class NotificationServiceSaveTest {
         //Arrange
         NotificationRepository repo = mock(NotificationRepository.class);
         NotificationAuditLogger auditLogger = mock(NotificationAuditLogger.class);
-        NotificationService service = new NotificationService(repo, auditLogger);
+        EmailService emailService = mock(EmailService.class);
+        NotificationService service = new NotificationService(repo, auditLogger, emailService);
 
         //DTO med fejkdata
         NotificationDTO dto = new NotificationDTO();
