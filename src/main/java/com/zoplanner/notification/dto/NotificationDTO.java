@@ -7,4 +7,8 @@ import lombok.*;
 public class NotificationDTO {
     private String message;
     private String recipient;
+
+    // new fields for assignment notifications. (issue7)
+    private String recipientName;  // name of the recipient.
+    private String assignmentTitle; // name of the assignment.
 }

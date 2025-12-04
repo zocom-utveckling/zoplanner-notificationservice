@@ -12,10 +12,14 @@ import org.springframework.stereotype.Service;
 public class NotificationService {
 
     private final NotificationRepository notificationRepository;
+    private final NotificationTemplate notificationTemplate; // new (issue7)
+
 
     // Dependency injection, Spring ger Repository automatiskt
-    public NotificationService(NotificationRepository notificationRepository) {
+    public NotificationService(NotificationRepository notificationRepository,
+                               NotificationTemplate notificationTemplate) { // new (issue7)
         this.notificationRepository = notificationRepository;
+        this.notificationTemplate = notificationTemplate; // new (issue7)
     }
 
     public void createNotification(NotificationDTO dto) {
@@ -30,8 +34,26 @@ public class NotificationService {
             notificationRepository.save(notification); // TODO: lägg till i NotificationRepository
             log.info("Notification saved"); // Övervakning
 
+            // new to send a notification when an assignment is created (issue7)
+            sendAssignmentCreatedNotification(dto);
+
         } catch (Exception e) {
             log.error("Error creating notification", e); // Felsökning
         }
+    }
+
+    // new helper method that builds and sends a message for assignment created (issue7)
+    private void sendAssignmentCreatedNotification(NotificationDTO dto) {
+
+        // build the message text using the NotificationTemplate class
+        String text = notificationTemplate.buildAssignmentCreatedMessage(
+                dto.getRecipientName(),
+                dto.getAssignmentTitle()
+        );
+
+        // in a real system we would call an email or sms service here.
+        // but for now we just log that we are sending the message.
+        log.info("Sending 'assignment created' notification to {}", dto.getRecipient());
+        log.debug("Notification message body:\n{}", text);
     }
 }
