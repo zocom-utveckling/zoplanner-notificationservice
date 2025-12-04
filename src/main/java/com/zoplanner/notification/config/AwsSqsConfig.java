@@ -5,17 +5,17 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
 import software.amazon.awssdk.regions.Region;
-import software.amazon.awssdk.services.ses.SesClient;
+import software.amazon.awssdk.services.sqs.SqsClient;
 
 @Configuration
-public class AwsSesConfig {
+public class AwsSqsConfig {
 
     @Value("${aws.region}")
     private String awsRegion;
 
     @Bean
-    public SesClient sesClient() {
-        return SesClient.builder()
+    public SqsClient sqsClient() {
+        return SqsClient.builder()
                 .region(Region.of(awsRegion))
                 .credentialsProvider(DefaultCredentialsProvider.builder().build())
                 .build();

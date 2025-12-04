@@ -43,12 +43,10 @@ public class EmailService {
         log.debug("Email subject: {}, body length: {}", subject, body.length());
 
         try {
-            // Bygg destination (mottagare)
             Destination destination = Destination.builder()
                     .toAddresses(toEmail)
                     .build();
 
-            // Bygg email content
             Content subjectContent = Content.builder()
                     .data(subject)
                     .charset("UTF-8")
@@ -68,13 +66,11 @@ public class EmailService {
                     .body(emailBody)
                     .build();
 
-            // Bygg send request
             SendEmailRequest.Builder requestBuilder = SendEmailRequest.builder()
                     .destination(destination)
                     .message(message)
                     .source(String.format("%s <%s>", fromName, fromEmail));
 
-            // Lägg till configuration set om det finns
             if (configurationSet != null && !configurationSet.isEmpty()) {
                 requestBuilder.configurationSetName(configurationSet);
             }
