@@ -17,12 +17,13 @@ public class NotificationServiceAuditErrorTest {
     void testAuditLoggerFailureIsHandled(CapturedOutput output) {
         NotificationRepository repo = mock(NotificationRepository.class);
         NotificationAuditLogger audit = mock(NotificationAuditLogger.class);
+        EmailService emailService = mock(EmailService.class);
 
         doThrow(new RuntimeException("File write failed"))
                 .when(audit)
                 .logNotificationSent(anyString(), anyString(), anyString(), anyBoolean());
 
-        NotificationService service = new NotificationService(repo, audit);
+        NotificationService service = new NotificationService(repo, audit, emailService);
 
         NotificationDTO dto = new NotificationDTO();
         dto.setMessage("Hello");
