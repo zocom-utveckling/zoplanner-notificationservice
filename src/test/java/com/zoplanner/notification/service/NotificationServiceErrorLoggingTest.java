@@ -1,6 +1,7 @@
 package com.zoplanner.notification.service;
 
 import com.zoplanner.notification.dto.NotificationDTO;
+import com.zoplanner.notification.logging.NotificationAuditLogger;
 import com.zoplanner.notification.repository.NotificationRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -15,9 +16,11 @@ public class NotificationServiceErrorLoggingTest {
     @Test
     void testErrorLoggingWhenRepositoryFails(CapturedOutput output) {
 
-        //Arrange, mock repository och service
+        //Arrange, mock repository, auditLogger, emailService och service
         NotificationRepository repo = mock(NotificationRepository.class);
-        NotificationService service = new NotificationService(repo);
+        NotificationAuditLogger auditLogger = mock(NotificationAuditLogger.class);
+        EmailService emailService = mock(EmailService.class);
+        NotificationService service = new NotificationService(repo, auditLogger, emailService);
 
         //Gör så att repository skapar exception
         doThrow(new RuntimeException("Database failure"))
@@ -29,8 +32,12 @@ public class NotificationServiceErrorLoggingTest {
         dto.setMessage("Hello");
         dto.setRecipient("test@test.com");
 
-        //Act anropa service
-        service.createNotification(dto);
+        //Act anropa service och förvänta exception
+        try {
+            service.createNotification(dto);
+        } catch (RuntimeException e) {
+            // Expected exception
+        }
 
         //Assert loggning
         assertThat(output).contains("Error");

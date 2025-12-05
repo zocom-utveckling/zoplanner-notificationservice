@@ -1,10 +1,10 @@
 package com.zoplanner.notification.controller;
 
+import com.zoplanner.notification.dto.NotificationDTO;
 import org.junit.jupiter.api.Test;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
 import com.zoplanner.notification.service.NotificationService;
-import com.zoplanner.notification.dto.NotificationDTO;
 
 public class NotificationControllerTest {
 

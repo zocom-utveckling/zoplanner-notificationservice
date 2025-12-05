@@ -1,10 +1,12 @@
 package com.zoplanner.notification.service;
 
+import com.zoplanner.notification.dto.NotificationDTO;
+import com.zoplanner.notification.logging.NotificationAuditLogger;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import com.zoplanner.notification.model.Notification;
 import com.zoplanner.notification.repository.NotificationRepository;
-import com.zoplanner.notification.dto.NotificationDTO;
+
 import static org.mockito.Mockito.*;
 
 public class NotificationServiceTest {
@@ -12,8 +14,9 @@ public class NotificationServiceTest {
     @Test
     void testCreateNotification() {
         NotificationRepository repository = Mockito.mock(NotificationRepository.class);
-
-        NotificationService service = new NotificationService(repository);
+        NotificationAuditLogger auditLogger = Mockito.mock(NotificationAuditLogger.class);
+        EmailService emailService = Mockito.mock(EmailService.class);
+        NotificationService service = new NotificationService(repository, auditLogger, emailService);
 
         NotificationDTO dto = new NotificationDTO();
         dto.setMessage("Hello");
