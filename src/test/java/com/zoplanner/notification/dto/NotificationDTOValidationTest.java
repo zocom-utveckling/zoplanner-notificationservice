@@ -24,7 +24,7 @@ public class NotificationDTOValidationTest {
         dto.setMessage("Hello");
         dto.setRecipient("test@test.com");
         dto.setChannel("EMAIL");
-        dto.setChannel("GENERIC");
+        dto.setEventType("GENERIC");
         return dto;
     }
 
