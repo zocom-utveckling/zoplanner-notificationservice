@@ -70,8 +70,6 @@ public class NotificationService {
             } catch (Exception auditException) {
                 log.error("Failed to write audit log after failure", auditException);
             }
-
-            throw new RuntimeException("Failed to create notification", e);
         }
     }
 
