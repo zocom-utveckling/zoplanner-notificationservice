@@ -1,21 +1,91 @@
 version: '3.8'
 
 services:
-  # Notification Service
-  notification-service:
+  # PostgreSQL Database
+  zoplanner-database:
+    build: ./zoplanner-api/webapi/database
+    container_name: zoplanner-database
+    networks:
+      - zoplanner
+    ports:
+      - "5432:5432"
+    env_file:
+      - .env
+    volumes:
+      - zoplanner-data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  # Spring Boot Application
+  app:
     build: .
-    container_name: zoplanner-notification-service
+    container_name: zoplanner
     networks:
       - zoplanner
     ports:
       - "8080:8080"
+    env_file:
+      - .env
     restart: unless-stopped
+    depends_on:
+      - zoplanner-database
+
+  # Notification Service
+  notification-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: zoplanner-notification-service
+    networks:
+      - zoplanner
+    ports:
+      - "8082:8080"
+    env_file:
+      - .env
     volumes:
       - notification-logs:/app/notification-logs
+    restart: unless-stopped
+    depends_on:
+      - app
+      - zoplanner-database
+
+  # .NET Application
+  dotnet-service:
+    build:
+      context: ../../zoplanner-service/zoplannerservice # Sökväg till .NET-tjänstens mapp som innehåller Dockerfile
+      dockerfile: Dockerfile
+    container_name: zoplanner-dotnet
+    networks:
+      - zoplanner
+    ports:
+      - "5027:5027"
+    environment:
+      - SpringApi__BaseUrl=http://zoplanner:8080/api
+      - NotificationApi__BaseUrl=http://notification-service:8080/api
+    restart: unless-stopped
+    depends_on:
+      - app
+      - notification-service
+
+  # Frontend Application
+  frontend:
+    build:
+      context: ../../zoplanner-frontend # Sökväg till frontend-mappen som innehåller Dockerfile
+      dockerfile: Dockerfile
+    container_name: zoplanner-frontend
+    networks:
+      - zoplanner
+    ports:
+      - "3000:3000"
+    restart: unless-stopped
+    depends_on:
+      - app
+      - dotnet-service
+      - notification-service
 
 networks:
   zoplanner:
     driver: bridge
 
 volumes:
+  zoplanner-data:
   notification-logs:
