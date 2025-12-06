@@ -7,12 +7,15 @@ Denna README är skapad för user storyn: **"Som utvecklare vill jag ha väldoku
 - **Språk/ramverk:** Java, Spring Boot
 - **Bygg:** Maven
 - **Paket-rotnamn:** `com.zoplanner.notification`
+- **Arkitektur:** Fristående mikroservice (event-driven)
 - **Moduler (utifrån befintliga filer):**
     - `controller`: REST-kontrollers (t.ex. `NotificationController`)
     - `repository`: Persistens/DB-repositories (t.ex. `NotificationRepository`)
     - `dto`: Data Transfer Objects (t.ex. `NotificationDTO`)
     - `model`: Domänklass(er) (t.ex. `Notification`)
     - `service`: Tjänstelogik (t.ex. `NotificationTemplate`)
+
+> **Viktigt:** Denna tjänst är **fristående** och har inga beroenden till andra ZoPlanner-repositories. Den kan köras helt självständigt med sin egen databas.
 
 > **Notera:** `NotificationController` är i nuläget tom — fyll på med endpoints enligt behov (se mall nedan).
 
@@ -26,7 +29,7 @@ Förutsätter att du har **Java 21+** och **Maven 3.9+** installerat.
 # 2) Starta applikationen
 ./mvnw spring-boot:run   # eller: mvn spring-boot:run
 
-# Applikationen körs vanligtvis på: http://localhost:8080
+# Applikationen körs på: http://localhost:8082
 ```
 
 ### Kör som JAR
@@ -37,7 +40,9 @@ java -jar target/*.jar
 
 ## Kör med Docker
 
-### Snabbstart med Docker
+### Snabbstart med Docker (Standalone)
+
+Denna tjänst kan köras helt fristående med sin egen databas:
 
 ```bash
 # 1) Bygg JAR-filen (skippa tester)
@@ -53,35 +58,33 @@ docker-compose ps
 docker-compose logs -f
 ```
 
-Applikationen körs nu på: http://localhost:8081
+Applikationen körs nu på: http://localhost:8082
+PostgreSQL databas körs på: localhost:5432
 
 ### Docker-kommandon
-
-Se [DOCKER_README.md](DOCKER_README.md) för fullständig dokumentation av Docker-kommandon.
 
 **Vanligaste kommandona:**
 - Starta: `docker-compose up -d`
 - Stoppa: `docker-compose down`
 - Rebuilda efter kodändringar: `mvn clean package -DskipTests && docker-compose up -d --build`
 - Visa loggar: `docker-compose logs -f notification-service`
-
-### Integration med huvudprojektet
-
-För att köra notification service tillsammans med andra ZoPlanner-services, se [INTEGRATION_README.md](INTEGRATION_README.md).
+- Visa databas-loggar: `docker-compose logs -f zoplanner-database`
+- Rensa allt: `docker-compose down -v` (tar bort containers och volymer)
 
 ### Docker-filer
 
 - **Dockerfile** - Container-definition för notification service
-- **docker-compose.yml** - Orkestreringsmönster för lokal utveckling
+- **docker-compose.yml** - Standalone setup (notification service + databas)
+- **database/Dockerfile** - PostgreSQL databas-container
 - **.dockerignore** - Exkluderar onödiga filer från Docker-bygget
-- **.env.example** - Mall för miljövariabler (kopiera till `.env`)
+- **.env** - Miljövariabler (skapa denna från .env.example om den inte finns)
 
 ## Konfiguration (miljövariabler/properties)
 Lägg till/ändra `application.properties` enligt ert behov.
 
 ### Lokalt (application.properties)
 ```properties
-server.port=8080
+server.port=8082
 spring.application.name=notification-service
 
 # AWS SES Configuration
