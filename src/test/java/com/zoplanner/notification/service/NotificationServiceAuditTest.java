@@ -17,7 +17,8 @@ public class NotificationServiceAuditTest {
 
         NotificationRepository repo = mock(NotificationRepository.class);
         NotificationAuditLogger audit = mock(NotificationAuditLogger.class);
-        NotificationService service = new NotificationService(repo, audit);
+        EmailService emailService = mock(EmailService.class);
+        NotificationService service = new NotificationService(repo, audit, emailService);
 
         NotificationDTO dto = new NotificationDTO();
         dto.setMessage("Hello");
@@ -41,7 +42,8 @@ public class NotificationServiceAuditTest {
 
         NotificationRepository repo = mock(NotificationRepository.class);
         NotificationAuditLogger audit = mock(NotificationAuditLogger.class);
-        NotificationService service = new NotificationService(repo, audit);
+        EmailService emailService = mock(EmailService.class);
+        NotificationService service = new NotificationService(repo, audit, emailService);
 
         NotificationDTO dto = new NotificationDTO();
         dto.setMessage("Hello");
