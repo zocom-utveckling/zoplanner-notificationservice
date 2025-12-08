@@ -18,9 +18,10 @@ public class NotificationServiceErrorLoggingTest {
 
         //Arrange, mock repository, auditLogger, emailService och service
         NotificationRepository repo = mock(NotificationRepository.class);
+        NotificationTemplate template = mock(NotificationTemplate.class);
         NotificationAuditLogger auditLogger = mock(NotificationAuditLogger.class);
         EmailService emailService = mock(EmailService.class);
-        NotificationService service = new NotificationService(repo, auditLogger, emailService);
+        NotificationService service = new NotificationService(repo, template, auditLogger, emailService);
 
         //Gör så att repository skapar exception
         doThrow(new RuntimeException("Database failure"))

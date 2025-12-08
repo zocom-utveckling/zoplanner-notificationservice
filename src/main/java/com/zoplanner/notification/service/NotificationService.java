@@ -1,5 +1,6 @@
 package com.zoplanner.notification.service;
 
+import com.zoplanner.notification.dto.EmailType;
 import com.zoplanner.notification.dto.NotificationDTO;
 import com.zoplanner.notification.logging.NotificationAuditLogger;
 import com.zoplanner.notification.model.Notification;
@@ -13,17 +14,20 @@ public class NotificationService {
 
     private final NotificationRepository notificationRepository;
     private final NotificationTemplate notificationTemplate; // new (issue7)
+    private final EmailService emailService;
+    private final NotificationAuditLogger notificationAuditLogger;
 
 
     // Dependency injection, Spring ger Repository automatiskt
     public NotificationService(NotificationRepository notificationRepository,
-                               NotificationTemplate notificationTemplate) { // new (issue7)
-    // Dependency injection – både repository, audit-logger och e-posttjänst
-    public NotificationService(NotificationRepository notificationRepository,
+                               NotificationTemplate notificationTemplate,
                                NotificationAuditLogger notificationAuditLogger,
-                               EmailService emailService) {
+                               EmailService emailService) { // new (issue7)
+
         this.notificationRepository = notificationRepository;
         this.notificationTemplate = notificationTemplate; // new (issue7)
+        this.emailService = emailService;
+        this.notificationAuditLogger = notificationAuditLogger;
     }
 
     public void createNotification(NotificationDTO dto) {
@@ -40,7 +44,11 @@ public class NotificationService {
             // 2. Skicka e-post om kanalen är EMAIL och vi har ett mail-innehåll
             if ("EMAIL".equalsIgnoreCase(dto.getChannel()) && dto.getEmailBody() != null) {
                 try {
-                    emailService.sendEmail(dto);
+                    String recipient = dto.getRecipient();
+                    String subject = dto.getSubject() != null ? dto.getSubject() : "Notification";
+                    String emailBody = dto.getEmailBody();
+
+                    emailService.sendEmail(recipient, subject, emailBody);
                     log.info("Email sent for notification to {}", dto.getRecipient());
                 } catch (Exception emailException) {
                     log.error("Failed to send email notification to {}", dto.getRecipient(), emailException);
