@@ -29,6 +29,11 @@ public class NotificationDTO {
     private String subject;
     private String emailBody;
     private EmailType emailType;
+  
+      // New fields for assignment notifications (issue #7)
+    private String recipientName;    // name of the recipient
+    private String assignmentTitle;  // title of the assignment
+
 
     @Override
     public String toString() {
