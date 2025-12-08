@@ -55,7 +55,7 @@ public class NotificationService {
         return convertToDTO(notification);
     }
 
-    // Hämta alla notifikatioenr för en användare
+    // Hämta alla notifikationer för en användare
     public List<NotificationDTO> getNotificationsByUserId(Long userId) {
         List<Notification> notifications = notificationRepository.findByUserId(userId);
 
@@ -75,7 +75,7 @@ public class NotificationService {
     }
 
 
-    // Kpnverterar Entity till DTO
+    // Konverterar Entity till DTO
     private NotificationDTO convertToDTO(Notification notification) {
         NotificationDTO notificationDTO = new NotificationDTO();
         notificationDTO.setId(notification.getId());
