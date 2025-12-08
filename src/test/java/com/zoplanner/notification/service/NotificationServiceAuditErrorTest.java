@@ -16,6 +16,7 @@ public class NotificationServiceAuditErrorTest {
     @Test
     void testAuditLoggerFailureIsHandled(CapturedOutput output) {
         NotificationRepository repo = mock(NotificationRepository.class);
+        NotificationTemplate template = mock(NotificationTemplate.class);
         NotificationAuditLogger audit = mock(NotificationAuditLogger.class);
         EmailService emailService = mock(EmailService.class);
 
@@ -23,7 +24,7 @@ public class NotificationServiceAuditErrorTest {
                 .when(audit)
                 .logNotificationSent(anyString(), anyString(), anyString(), anyBoolean());
 
-        NotificationService service = new NotificationService(repo, audit, emailService);
+        NotificationService service = new NotificationService(repo, template, audit, emailService);
 
         NotificationDTO dto = new NotificationDTO();
         dto.setMessage("Hello");
