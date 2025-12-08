@@ -1,36 +1,34 @@
 package com.zoplanner.notification.controller;
 
-import com.zoplanner.notification.service.NotificationService;
 import com.zoplanner.notification.dto.NotificationDTO;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.web.bind.annotation.*;
+import com.zoplanner.notification.service.NotificationService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
 
-@Slf4j
 @RestController
 @RequestMapping("/api/notifications")
-
 public class NotificationController {
 
+    private static final Logger log = LoggerFactory.getLogger(NotificationController.class);
     private final NotificationService notificationService;
 
-    // Dependency injection, Spring skickar in NotificationService i konstruktorn
     public NotificationController(NotificationService notificationService) {
         this.notificationService = notificationService;
     }
 
     @PostMapping
     public ResponseEntity<Void> createNotification(@RequestBody NotificationDTO dto) {
-        log.info("Request to create notification received"); // Övervakning, visar att ett anrop kommit
-        log.debug("DTO: {}", dto); // Felsökning, visar vad som skickats in
+        log.info("Request to create notification received");
+        log.debug("DTO: {}", dto);
 
         try {
-            notificationService.createNotification(dto); // Skickar in DTO till service
-            log.info("Notification created successfully"); // Övervakning, visar att flödet lyckades
+            notificationService.createNotification(dto);
+            log.info("Notification created successfully");
             return ResponseEntity.ok().build();
-
         } catch (Exception e) {
-            log.error("Error creating notification", e); // Felsökning, visar stacktrace
+            log.error("Error creating notification", e);
             return ResponseEntity.internalServerError().build();
         }
     }

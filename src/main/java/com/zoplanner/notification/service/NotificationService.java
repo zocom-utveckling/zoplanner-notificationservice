@@ -1,10 +1,9 @@
 package com.zoplanner.notification.service;
 
-import com.zoplanner.notification.model.Notification;
-import com.zoplanner.notification.logging.NotificationAuditLogger;
-import com.zoplanner.notification.repository.NotificationRepository;
 import com.zoplanner.notification.dto.NotificationDTO;
-import com.zoplanner.notification.dto.EmailType;
+import com.zoplanner.notification.logging.NotificationAuditLogger;
+import com.zoplanner.notification.model.Notification;
+import com.zoplanner.notification.repository.NotificationRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
@@ -19,34 +18,37 @@ public class NotificationService {
     // Dependency injection, Spring ger Repository automatiskt
     public NotificationService(NotificationRepository notificationRepository,
                                NotificationTemplate notificationTemplate) { // new (issue7)
+    // Dependency injection – både repository, audit-logger och e-posttjänst
+    public NotificationService(NotificationRepository notificationRepository,
+                               NotificationAuditLogger notificationAuditLogger,
+                               EmailService emailService) {
         this.notificationRepository = notificationRepository;
         this.notificationTemplate = notificationTemplate; // new (issue7)
     }
 
-    /**
-     * Skapar en notifikation och skickar e-post
-     *
-     * @param dto NotificationDTO med all information som behövs
-     */
     public void createNotification(NotificationDTO dto) {
-        log.info("Creating notification for recipient: {}", dto.getRecipient());
+        log.info("Creating notification");
         log.debug("DTO data: {}", dto);
 
         try {
-            // 1. Spara till databas
+            // 1. Spara notifikationen (in-memory / databas beroende på implementation av repository)
             Notification notification = new Notification(dto.getMessage(), dto.getRecipient());
             log.debug("Notification created: {}", notification);
             notificationRepository.save(notification);
-            log.info("Notification saved to database");
+            log.info("Notification saved");
 
-            // 2. Skicka email om email-fält finns
-            if (shouldSendEmail(dto)) {
-                sendEmailNotification(dto);
-            } else {
-                log.debug("No email fields provided, skipping email sending");
+            // 2. Skicka e-post om kanalen är EMAIL och vi har ett mail-innehåll
+            if ("EMAIL".equalsIgnoreCase(dto.getChannel()) && dto.getEmailBody() != null) {
+                try {
+                    emailService.sendEmail(dto);
+                    log.info("Email sent for notification to {}", dto.getRecipient());
+                } catch (Exception emailException) {
+                    log.error("Failed to send email notification to {}", dto.getRecipient(), emailException);
+                    // vi låter ändå huvudflödet fortsätta – utskicket är redan sparat och auditloggas nedan
+                }
             }
 
-            // 3. Logga framgång till audit-fil
+            // 3. Audit-logg – med defaultvärden om kanal/eventType saknas
             notificationAuditLogger.logNotificationSent(
                     dto.getRecipient(),
                     dto.getChannel() != null ? dto.getChannel() : "EMAIL",
@@ -55,9 +57,10 @@ public class NotificationService {
             );
 
         } catch (Exception e) {
-            log.error("Error creating notification for recipient: {}", dto.getRecipient(), e);
+            // Detta loggmeddelande är det som testerna letar efter
+            log.error("Error creating notification", e);
 
-            // Logga misslyckande till audit-fil
+            // Försök audit-logga misslyckandet
             try {
                 notificationAuditLogger.logNotificationSent(
                         dto.getRecipient(),

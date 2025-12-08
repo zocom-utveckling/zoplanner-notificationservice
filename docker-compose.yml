@@ -1,21 +1,43 @@
 version: '3.8'
 
 services:
+  # PostgreSQL Database
+  zoplanner-database:
+    build: ./database
+    container_name: zoplanner-database
+    networks:
+      - zoplanner
+    ports:
+      - "5432:5432"
+    env_file:
+      - .env
+    volumes:
+      - zoplanner-data:/var/lib/postgresql/data
+    restart: unless-stopped
+
   # Notification Service
   notification-service:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile
     container_name: zoplanner-notification-service
     networks:
       - zoplanner
     ports:
-      - "8080:8080"
-    restart: unless-stopped
+      - "8082:8082"
+    env_file:
+      - .env
     volumes:
       - notification-logs:/app/notification-logs
+    restart: unless-stopped
+    depends_on:
+      - zoplanner-database
+
 
 networks:
   zoplanner:
     driver: bridge
 
 volumes:
+  zoplanner-data:
   notification-logs:
