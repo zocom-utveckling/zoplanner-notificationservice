@@ -1,8 +1,10 @@
 package com.zoplanner.notification.logging;
 
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Service;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
+
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -10,23 +12,22 @@ import java.nio.file.StandardOpenOption;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
-@Slf4j
 @Service
-
 public class NotificationAuditLogger {
+
+    private static final Logger log = LoggerFactory.getLogger(NotificationAuditLogger.class);
 
     private final Path logFilePath;
     private final DateTimeFormatter formatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME;
 
-    // Path hämtas från application.properties
     public NotificationAuditLogger(
-            @Value("${notification.audit.log-file:/app/notification-logs/notifications.log}")
+            @Value("${notification.audit.log-file:notification-logs/notifications.log}")
             String logFile
     ) {
         this.logFilePath = Path.of(logFile);
         ensureLogDirectoryExists();
     }
-    // Skapar loggfilens katalog om den inte redan finns
+
     private void ensureLogDirectoryExists() {
         try {
             Path dir = logFilePath.getParent();
@@ -38,33 +39,24 @@ public class NotificationAuditLogger {
         }
     }
 
-    /**
-     * Loggar att ett meddelande skickades till en viss kanal
-     * @param recipient = meddelandemottagare
-     * @param channel = t.ex SMS, EMAIL
-     * @param eventType = t.ex nytt uppdrag, uppdatering i schemat
-     * @param success = om det utskicket lyckades eller inte
-     */
     public void logNotificationSent(String recipient, String channel, String eventType, boolean success) {
+
         String timestamp = LocalDateTime.now().format(formatter);
 
-        String line = String.format(
+        String json = String.format(
                 "{\"timestamp\":\"%s\",\"recipient\":\"%s\",\"channel\":\"%s\",\"eventType\":\"%s\",\"success\":%s}%n",
-                timestamp,
-                recipient,
-                channel,
-                eventType,
-                success
+                timestamp, recipient, channel, eventType, success
         );
+
         try {
             Files.writeString(
                     logFilePath,
-                    line,
+                    json,
                     StandardOpenOption.CREATE,
                     StandardOpenOption.APPEND
             );
         } catch (IOException e) {
-            log.error("Failed to write notification to file", e);
+            log.error("Failed to write notification audit log", e);
         }
     }
 }
