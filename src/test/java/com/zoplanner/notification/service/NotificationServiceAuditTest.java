@@ -44,6 +44,7 @@ public class NotificationServiceAuditTest {
         NotificationRepository repo = mock(NotificationRepository.class);
         NotificationTemplate template = mock(NotificationTemplate.class);
         NotificationAuditLogger audit = mock(NotificationAuditLogger.class);
+        NotificationTemplate template = mock(NotificationTemplate.class);
         EmailService emailService = mock(EmailService.class);
         NotificationService service = new NotificationService(repo, template, audit, emailService);
 

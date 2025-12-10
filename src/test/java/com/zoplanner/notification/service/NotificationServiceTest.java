@@ -22,7 +22,6 @@ public class NotificationServiceTest {
         NotificationTemplate template = Mockito.mock(NotificationTemplate.class);
         NotificationAuditLogger auditLogger = Mockito.mock(NotificationAuditLogger.class);
         EmailService emailService = Mockito.mock(EmailService.class);
-
         NotificationService service = new NotificationService(repository, template, auditLogger, emailService);
 
         NotificationDTO dto = new NotificationDTO();

@@ -26,7 +26,6 @@ public class NotificationServiceAuditErrorTest {
 
         NotificationService service = new NotificationService(repo, template, audit, emailService);
 
-
         NotificationDTO dto = new NotificationDTO();
         dto.setMessage("Hello");
         dto.setRecipient("test@test.com");
