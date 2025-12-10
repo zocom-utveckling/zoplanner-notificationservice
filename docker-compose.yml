@@ -32,6 +32,9 @@ services:
     restart: unless-stopped
     depends_on:
       - zoplanner-database
+    environment:
+      AWS_SQS_QUEUE_URL: https://sqs.eu-north-1.amazonaws.com/084828590879/zoplanner-notification-queue
+
 
 
 networks:
@@ -41,3 +44,6 @@ networks:
 volumes:
   zoplanner-data:
   notification-logs:
+
+
+
