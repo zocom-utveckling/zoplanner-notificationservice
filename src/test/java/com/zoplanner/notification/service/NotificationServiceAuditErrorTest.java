@@ -11,41 +11,31 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(OutputCaptureExtension.class)
-public class NotificationServiceErrorLoggingTest {
+public class NotificationServiceAuditErrorTest {
 
     @Test
-    void testErrorLoggingWhenRepositoryFails(CapturedOutput output) {
-
-        //Arrange, mock repository, auditLogger, emailService och service
+    void testAuditLoggerFailureIsHandled(CapturedOutput output) {
         NotificationRepository repo = mock(NotificationRepository.class);
         NotificationTemplate template = mock(NotificationTemplate.class);
-        NotificationAuditLogger auditLogger = mock(NotificationAuditLogger.class);
+        NotificationAuditLogger audit = mock(NotificationAuditLogger.class);
         EmailService emailService = mock(EmailService.class);
-        NotificationService service = new NotificationService(repo, template, auditLogger, emailService);
 
-        //Gör så att repository skapar exception
-        doThrow(new RuntimeException("Database failure"))
-                .when(repo)
-                .save(any());
+        doThrow(new RuntimeException("File write failed"))
+                .when(audit)
+                .logNotificationSent(anyString(), anyString(), anyString(), anyBoolean());
 
-        //Fake DTO
+        NotificationService service = new NotificationService(repo, template, audit, emailService);
+
+
         NotificationDTO dto = new NotificationDTO();
         dto.setMessage("Hello");
         dto.setRecipient("test@test.com");
 
-        //Act anropa service och förvänta exception
-        try {
-            service.createNotification(dto);
-        } catch (RuntimeException e) {
-            // Expected exception
-        }
+        service.createNotification(dto);
 
-        //Assert loggning
-        assertThat(output).contains("Error");
-        assertThat(output).contains("Database failure");
         assertThat(output).contains("Error creating notification");
+        assertThat(output).contains("File write failed");
 
-        //Ska inte ha med log över lyckade anrop
-        assertThat(output).doesNotContain("Notification saved");
+        verify(repo, times(1)).save(any());
     }
 }

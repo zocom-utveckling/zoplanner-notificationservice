@@ -1,5 +1,6 @@
 package com.zoplanner.notification.service;
 
+import com.zoplanner.notification.logging.NotificationAuditLogger;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import com.zoplanner.notification.model.Notification;
@@ -18,8 +19,11 @@ public class NotificationServiceTest {
     @Test
     void testCreateNotification() {
         NotificationRepository repository = Mockito.mock(NotificationRepository.class);
+        NotificationTemplate template = Mockito.mock(NotificationTemplate.class);
+        NotificationAuditLogger auditLogger = Mockito.mock(NotificationAuditLogger.class);
+        EmailService emailService = Mockito.mock(EmailService.class);
 
-        NotificationService service = new NotificationService(repository);
+        NotificationService service = new NotificationService(repository, template, auditLogger, emailService);
 
         NotificationDTO dto = new NotificationDTO();
         dto.setMessage("Hello");
@@ -32,7 +36,10 @@ public class NotificationServiceTest {
     @Test
     void testMarkAsRead() {
         NotificationRepository repository = mock(NotificationRepository.class); // Skapa mock repository
-        NotificationService service = new NotificationService(repository);
+        NotificationTemplate template = Mockito.mock(NotificationTemplate.class);
+        NotificationAuditLogger auditLogger = Mockito.mock(NotificationAuditLogger.class);
+        EmailService emailService = Mockito.mock(EmailService.class);
+        NotificationService service = new NotificationService(repository, template, auditLogger, emailService);
 
 
         Notification notification = new Notification();  // Skapa en notifikation
@@ -43,10 +50,9 @@ public class NotificationServiceTest {
 
 
         NotificationDTO notificationDTO = service.markAsRead(1L);
-        //service.markAsRead(1L); // Anropa metoden
 
 
-        //assertTrue(notification.isRead());
+
         assertTrue(notification.isRead());
         verify(repository).save(notification);
 
@@ -57,7 +63,10 @@ public class NotificationServiceTest {
     @Test
     void testGetNotificationsByUserId() {
         NotificationRepository repository = mock(NotificationRepository.class);
-        NotificationService service = new NotificationService(repository);
+        NotificationTemplate template = Mockito.mock(NotificationTemplate.class);
+        NotificationAuditLogger auditLogger = Mockito.mock(NotificationAuditLogger.class);
+        EmailService emailService = Mockito.mock(EmailService.class);
+        NotificationService service = new NotificationService(repository, template, auditLogger, emailService);
 
         Notification notif1 = new Notification(); // Skapa test-notifikationer
         notif1.setUserId(100L);
@@ -67,11 +76,10 @@ public class NotificationServiceTest {
         when(repository.findByUserId(100L)).thenReturn(Arrays.asList(notif1, notif2));  // Säg åt mock att returnera listan
 
 
-        //service.getNotificationsByUserId(100L);
+
         List<NotificationDTO> result = service.getNotificationsByUserId(100L); // Anropa metoden
 
-        //verify(repository).findByUserId(100L);
-        //assertEquals(2, result.size());
+
         verify(repository).findByUserId(100L);
         assertEquals(2, result.size());
     }
@@ -79,7 +87,10 @@ public class NotificationServiceTest {
     @Test
     void testGetUnreadNotifications() {
         NotificationRepository repository = mock(NotificationRepository.class);
-        NotificationService service = new NotificationService(repository);
+        NotificationTemplate template = Mockito.mock(NotificationTemplate.class);
+        NotificationAuditLogger auditLogger = Mockito.mock(NotificationAuditLogger.class);
+        EmailService emailService = Mockito.mock(EmailService.class);
+        NotificationService service = new NotificationService(repository, template, auditLogger, emailService);
 
         Notification unreadNotif = new Notification();  // Skapa en oläst notifikation
         unreadNotif.setUserId(100L);
@@ -87,7 +98,7 @@ public class NotificationServiceTest {
 
         when(repository.findByUserIdAndIsRead(100L, false)).thenReturn(Arrays.asList(unreadNotif));  // Säg åt mock att returnera den
 
-        //service.getUnreadNotifications(100L);
+
         List<NotificationDTO> result = service.getUnreadNotifications(100L);  // Anropa metoden
 
         verify(repository).findByUserIdAndIsRead(100L, false);
