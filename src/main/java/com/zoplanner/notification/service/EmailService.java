@@ -1,28 +1,33 @@
 package com.zoplanner.notification.service;
 
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import software.amazon.awssdk.services.ses.SesClient;
-import software.amazon.awssdk.services.ses.model.*;
+import software.amazon.awssdk.services.ses.model.Body;
+import software.amazon.awssdk.services.ses.model.Content;
+import software.amazon.awssdk.services.ses.model.Destination;
+import software.amazon.awssdk.services.ses.model.Message;
+import software.amazon.awssdk.services.ses.model.SendEmailRequest;
+import software.amazon.awssdk.services.ses.model.SendEmailResponse;
+import software.amazon.awssdk.services.ses.model.SesException;
 
-/**
- * Email Service för att skicka e-post via AWS SES
- * Hanterar utskick av enkla text-emails och HTML-emails
- */
-@Slf4j
 @Service
 public class EmailService {
 
+    private static final Logger log = LoggerFactory.getLogger(EmailService.class);
+    private static final String UTF8 = "UTF-8";
+
     private final SesClient sesClient;
 
-    @Value("${aws.ses.from.email}")
+    @Value("${notification.email.from:}")
     private String fromEmail;
 
-    @Value("${aws.ses.from.name}")
+    @Value("${notification.email.fromName:}")
     private String fromName;
 
-    @Value("${aws.ses.configuration.set:}")
+    @Value("${notification.email.configurationSet:}")
     private String configurationSet;
 
     public EmailService(SesClient sesClient) {
@@ -30,131 +35,86 @@ public class EmailService {
     }
 
     /**
-     * Skickar ett enkelt text-email via AWS SES
-     *
-     * @param toEmail Mottagarens e-postadress
-     * @param subject Ämnesrad
-     * @param body E-postens innehåll (plain text)
-     * @return MessageId från SES om det lyckas
-     * @throws SesException om något går fel vid utskick
+     * Sends a plain text email and returns the SES message ID.
+     * If SES fails, the SesException is propagated (tests expect this).
      */
-    public String sendEmail(String toEmail, String subject, String body) {
-        log.info("Preparing to send email to: {}", toEmail);
-        log.debug("Email subject: {}, body length: {}", subject, body.length());
+    public String sendEmail(String to, String subject, String body) {
+        SendEmailRequest request = buildRequest(to, subject, body, false);
 
         try {
-            Destination destination = Destination.builder()
-                    .toAddresses(toEmail)
-                    .build();
-
-            Content subjectContent = Content.builder()
-                    .data(subject)
-                    .charset("UTF-8")
-                    .build();
-
-            Content bodyContent = Content.builder()
-                    .data(body)
-                    .charset("UTF-8")
-                    .build();
-
-            Body emailBody = Body.builder()
-                    .text(bodyContent)
-                    .build();
-
-            Message message = Message.builder()
-                    .subject(subjectContent)
-                    .body(emailBody)
-                    .build();
-
-            SendEmailRequest.Builder requestBuilder = SendEmailRequest.builder()
-                    .destination(destination)
-                    .message(message)
-                    .source(String.format("%s <%s>", fromName, fromEmail));
-
-            if (configurationSet != null && !configurationSet.isEmpty()) {
-                requestBuilder.configurationSetName(configurationSet);
-            }
-
-            SendEmailRequest emailRequest = requestBuilder.build();
-
-            SendEmailResponse response = sesClient.sendEmail(emailRequest);
-            String messageId = response.messageId();
-
-            log.info("Email sent successfully. MessageId: {}", messageId);
-            return messageId;
-
+            SendEmailResponse response = sesClient.sendEmail(request);
+            return response.messageId();
         } catch (SesException e) {
-            String errorMessage = e.awsErrorDetails() != null ? e.awsErrorDetails().errorMessage() : e.getMessage();
-            log.error("Failed to send email to: {}. Error: {}", toEmail, errorMessage, e);
+            log.error("Error sending email via SES", e);
             throw e;
-        } catch (Exception e) {
-            log.error("Unexpected error sending email to: {}", toEmail, e);
-            throw new RuntimeException("Failed to send email", e);
         }
     }
 
     /**
-     * Skickar ett HTML-formaterat email via AWS SES
-     *
-     * @param toEmail Mottagarens e-postadress
-     * @param subject Ämnesrad
-     * @param htmlBody E-postens innehåll (HTML)
-     * @return MessageId från SES om det lyckas
-     * @throws SesException om något går fel vid utskick
+     * Sends an HTML email and returns the SES message ID.
+     * If SES fails, a RuntimeException is thrown (tests expect this).
      */
-    public String sendHtmlEmail(String toEmail, String subject, String htmlBody) {
-        log.info("Preparing to send HTML email to: {}", toEmail);
-        log.debug("Email subject: {}, HTML body length: {}", subject, htmlBody.length());
+    public String sendHtmlEmail(String to, String subject, String htmlBody) {
+        SendEmailRequest request = buildRequest(to, subject, htmlBody, true);
 
         try {
-            Destination destination = Destination.builder()
-                    .toAddresses(toEmail)
-                    .build();
-
-            Content subjectContent = Content.builder()
-                    .data(subject)
-                    .charset("UTF-8")
-                    .build();
-
-            Content htmlContent = Content.builder()
-                    .data(htmlBody)
-                    .charset("UTF-8")
-                    .build();
-
-            Body emailBody = Body.builder()
-                    .html(htmlContent)
-                    .build();
-
-            Message message = Message.builder()
-                    .subject(subjectContent)
-                    .body(emailBody)
-                    .build();
-
-            SendEmailRequest.Builder requestBuilder = SendEmailRequest.builder()
-                    .destination(destination)
-                    .message(message)
-                    .source(String.format("%s <%s>", fromName, fromEmail));
-
-            if (configurationSet != null && !configurationSet.isEmpty()) {
-                requestBuilder.configurationSetName(configurationSet);
-            }
-
-            SendEmailRequest emailRequest = requestBuilder.build();
-
-            SendEmailResponse response = sesClient.sendEmail(emailRequest);
-            String messageId = response.messageId();
-
-            log.info("HTML email sent successfully. MessageId: {}", messageId);
-            return messageId;
-
+            SendEmailResponse response = sesClient.sendEmail(request);
+            return response.messageId();
         } catch (SesException e) {
-            String errorMessage = e.awsErrorDetails() != null ? e.awsErrorDetails().errorMessage() : e.getMessage();
-            log.error("Failed to send HTML email to: {}. Error: {}", toEmail, errorMessage, e);
-            throw e;
-        } catch (Exception e) {
-            log.error("Unexpected error sending HTML email to: {}", toEmail, e);
-            throw new RuntimeException("Failed to send HTML email", e);
+            log.error("Error sending HTML email via SES", e);
+            throw new RuntimeException("Failed to send HTML email via SES", e);
         }
     }
-}
 
+    // -------- private helper --------
+
+    private SendEmailRequest buildRequest(String to, String subject, String body, boolean html) {
+        // email part, fall back if not configured
+        String emailPart = (fromEmail != null && !fromEmail.isBlank())
+                ? fromEmail
+                : "no-reply@example.com";
+
+        // full "source" including optional display name
+        String source;
+        if (fromName != null && !fromName.isBlank()) {
+            source = fromName + " <" + emailPart + ">";
+        } else {
+            source = emailPart;
+        }
+
+        Content subjectContent = Content.builder()
+                .data(subject)
+                .charset(UTF8)
+                .build();
+
+        Content bodyContent = Content.builder()
+                .data(body)
+                .charset(UTF8)
+                .build();
+
+        Body emailBody = html
+                ? Body.builder().html(bodyContent).build()
+                : Body.builder().text(bodyContent).build();
+
+        Message message = Message.builder()
+                .subject(subjectContent)
+                .body(emailBody)
+                .build();
+
+        Destination destination = Destination.builder()
+                .toAddresses(to)
+                .build();
+
+        SendEmailRequest.Builder builder = SendEmailRequest.builder()
+                .source(source)
+                .destination(destination)
+                .message(message);
+
+        // Only include configuration set if configured (tests check this)
+        if (configurationSet != null && !configurationSet.isBlank()) {
+            builder.configurationSetName(configurationSet);
+        }
+
+        return builder.build();
+    }
+}
