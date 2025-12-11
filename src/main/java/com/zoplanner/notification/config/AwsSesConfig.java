@@ -13,7 +13,8 @@ public class AwsSesConfig {
      * Region for SES. We give it a sensible default so tests don't fail
      * when aws.region isn't provided in application-test properties.
      */
-    @Value("${aws.region:eu-west-1}")
+    @Value("${aws.region:eu-north-1}")
+
     private String region;
 
     @Bean
