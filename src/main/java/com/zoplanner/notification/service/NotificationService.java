@@ -103,4 +103,40 @@ public class NotificationService {
             throw e;
         }
     }
+
+    // new issue9
+    public void sendAssignmentDeletedNotification(NotificationDTO dto) {
+        log.info("Sending notification for deleted assignment");
+        log.debug("DTO data: {}", dto);
+
+        try {
+            String assignmentTitle = dto.getSubject();
+            if (assignmentTitle == null || assignmentTitle.isBlank()) {
+                assignmentTitle = "unknown assignment";
+            }
+
+            // build text using template. new issue9
+            String text = notificationTemplate.buildAssignmentDeletedMessage(
+                    dto.getRecipient(),
+                    assignmentTitle
+            );
+
+            String channel = dto.getChannel();
+
+            if ("SMS".equalsIgnoreCase(channel)) {
+                // sms not implemented yet, only log. new issue9
+                log.info("Sending sms (simulated) to {}", dto.getRecipient());
+                log.debug("sms body:\n{}", text);
+                return;
+            }
+
+            // default is email. ew issue9
+            log.info("Sending email for assignment deleted to {}", dto.getRecipient());
+            emailService.sendEmail(dto.getRecipient(), "Assignment deleted", text);
+
+        } catch (Exception e) {
+            log.error("Error sending assignment deleted notification", e);
+            throw e;
+        }
+    }
 }
