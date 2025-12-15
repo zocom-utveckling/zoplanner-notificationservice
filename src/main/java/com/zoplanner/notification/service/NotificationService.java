@@ -47,15 +47,14 @@ public class NotificationService {
             // Audit log on success
             notificationAuditLogger.logNotificationSent(
                     dto.getRecipient(),
-                    "EMAIL",    // channel (fixed for now)
-                    "GENERIC",  // event type (fixed for now)
+                    "EMAIL",
+                    "GENERIC",
                     true
             );
 
         } catch (Exception e) {
             log.error("Error creating notification", e);
 
-            // Try to write audit log even if saving failed
             try {
                 notificationAuditLogger.logNotificationSent(
                         dto.getRecipient(),
@@ -66,6 +65,42 @@ public class NotificationService {
             } catch (Exception auditException) {
                 log.error("Failed to write audit log after failure", auditException);
             }
+        }
+    }
+
+    // new issue8
+    public void sendAssignmentUpdatedNotification(NotificationDTO dto) {
+        log.info("Sending notification for updated assignment");
+        log.debug("DTO data: {}", dto);
+
+        try {
+            String assignmentTitle = dto.getSubject();
+            if (assignmentTitle == null || assignmentTitle.isBlank()) {
+                assignmentTitle = "unknown assignment";
+            }
+
+            // build text using template. new issue8
+            String text = notificationTemplate.buildAssignmentUpdatedMessage(
+                    dto.getRecipient(),
+                    assignmentTitle
+            );
+
+            String channel = dto.getChannel();
+
+            if ("SMS".equalsIgnoreCase(channel)) {
+                // sms not implemented yet, only log. new issue8
+                log.info("Sending sms (simulated) to {}", dto.getRecipient());
+                log.debug("sms body:\n{}", text);
+                return;
+            }
+
+            // default is email. new issue8
+            log.info("Sending email for assignment updated to {}", dto.getRecipient());
+            emailService.sendEmail(dto.getRecipient(), "Assignment updated", text);
+
+        } catch (Exception e) {
+            log.error("Error sending assignment updated notification", e);
+            throw e;
         }
     }
 }
