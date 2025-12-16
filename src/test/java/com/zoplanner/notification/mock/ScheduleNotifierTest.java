@@ -1,6 +1,12 @@
 package com.zoplanner.notification.mock;
 
+import com.zoplanner.notification.consumer.ScheduleUpdateConsumer;
+import com.zoplanner.notification.event.ScheduleUpdateEvent;
+import com.zoplanner.notification.model.NotificationPreference;
 import com.zoplanner.notification.service.ConsultantScheduleNotifier;
+import com.zoplanner.notification.service.NotificationDispatcher;
+import com.zoplanner.notification.service.ReminderScheduler;
+import org.assertj.core.api.InstantAssert;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -13,14 +19,25 @@ import software.amazon.awssdk.services.eventbridge.model.PutRuleRequest;
 import software.amazon.awssdk.services.eventbridge.model.PutRuleResponse;
 
 import java.time.Instant;
+import java.time.LocalDateTime;
+import java.util.Collections;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 public class ScheduleNotifierTest {
+    @InjectMocks
+    ScheduleUpdateConsumer consumer;
+
+    @Mock
+    private ReminderScheduler scheduler;
+
+    @Mock
+    private NotificationDispatcher dispatcher;
 
     @Mock
     EventBridgeClient eventBridgeClient;
@@ -67,6 +84,52 @@ public class ScheduleNotifierTest {
 
     }
 
+    @Test
+    public void testPerJob24hReminder(){
+        Instant jobTime = Instant.now().plusSeconds(60);
+
+        ScheduleUpdateEvent event = new ScheduleUpdateEvent();
+        event.setTeacherId("42");
+        event.setTeacherEmail("teacher42@school.se");
+        event.setSource("SCHEDULE_SERVICE");
+        event.setPreference(NotificationPreference.PER_JOB_24H);
+        event.setEventTime(jobTime);
+        event.setCreatedAt(LocalDateTime.now());
+        event.setChanges(Collections.emptyList());
+
+        consumer.handleMessage(event);
+
+        ArgumentCaptor<Runnable> runnableCaptor = ArgumentCaptor.forClass(Runnable.class);
+        verify(scheduler).scheduleReminder(any(), runnableCaptor.capture());
+
+        runnableCaptor.getValue().run();
+
+        verify(dispatcher).send24hReminder(event);
+
+        System.out.println(event);
+    }
+    @Test
+    public void weeklySummary_isCollectedAndDispatched() {
+        // Arrange
+        ScheduleUpdateEvent event = new ScheduleUpdateEvent();
+        event.setTeacherId("43");
+        event.setTeacherEmail("teacher43@school.se");
+        event.setSource("SCHEDULE_SERVICE");
+        event.setPreference(NotificationPreference.WEEKLY_SUMMARY);
+        event.setEventTime(Instant.now().plusSeconds(3600));
+        event.setCreatedAt(LocalDateTime.now());
+        event.setChanges(Collections.emptyList());
+
+        // Act
+        consumer.handleMessage(event);
+
+        consumer.sendWeeklySummaries();
+
+        // Assert
+        verify(dispatcher).sendWeeklySummary("teacher43@school.se");
+
+        System.out.println(event.toString());
+    }
 
 
 }
