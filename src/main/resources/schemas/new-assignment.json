@@ -28,6 +28,9 @@
     "teacherId": {
       "type": "string"
     },
+    "teacherName": {
+      "type": "string"
+    },
     "teacherEmail": {
       "type": "string",
       "format": "email"
