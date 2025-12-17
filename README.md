@@ -87,11 +87,15 @@ Lägg till/ändra `application.properties` enligt ert behov.
 server.port=8082
 spring.application.name=notification-service
 
-# AWS SES Configuration
+# AWS (non-secret config only)
 aws.region=eu-north-1
-aws.accessKeyId=your_key
-aws.secretAccessKey=your_secret
-ses.from.email=noreply@example.com
+
+# SES
+aws.ses.from.email=${AWS_SES_FROM_EMAIL:noreply@zoplanner.com}
+aws.ses.from.name=${AWS_SES_FROM_NAME:ZoPlanner Notifications}
+
+# SQS
+aws.sqs.queue-url=${AWS_SQS_QUEUE_URL}
 ```
 
 ### Docker (med .env fil)
@@ -99,15 +103,17 @@ Använder samma `application.properties` men läser värden från `.env` fil:
 ```bash
 cp .env.example .env
 # Redigera .env med dina AWS-credentials
-    username: notif
-    password: notif
-  jpa:
-    hibernate:
-      ddl-auto: validate
+# AWS credentials (DEV ONLY)
+AWS_ACCESS_KEY_ID=xxxxxxxx
+AWS_SECRET_ACCESS_KEY=xxxxxxxx
+AWS_REGION=eu-north-1
 
-logging:
-  level:
-    root: INFO
+# SES
+AWS_SES_FROM_EMAIL=noreply@zoplanner.com
+AWS_SES_FROM_NAME=ZoPlanner Notifications
+
+# SQS
+AWS_SQS_QUEUE_URL=https://sqs.eu-north-1.amazonaws.com/123456789012/zoplanner-notifications
 ```
 
 ## Projektstruktur (exempel)
