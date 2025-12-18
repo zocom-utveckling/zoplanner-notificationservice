@@ -1,4 +1,4 @@
-package sqs;
+package com.zoplanner.notification.sqs;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.zoplanner.notification.event.newassignment.NewAssignmentEvent;
