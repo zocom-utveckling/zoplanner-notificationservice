@@ -139,4 +139,37 @@ public class NotificationService {
             throw e;
         }
     }
+
+    // new issue20
+    // retry helper, tries to run the action again if it fails.
+    private void runWithRetry(Runnable action) {
+
+        int maxAttempts = 3; // how many times we try.
+        long delayMs = 500;  // wait time between tries (ms).
+
+        // loop for each try.
+        for (int attempt = 1; attempt <= maxAttempts; attempt++) {
+            try { // try to run the action.
+                action.run();
+                return; // success, stop retrying.
+
+            } catch (Exception e) { // if it fails we retry.
+                log.warn("send failed attempt {}/{}", attempt, maxAttempts);
+
+                // if this was the last try, we throw the error.
+                if (attempt == maxAttempts) {
+                    throw e;
+                }
+
+                // wait before next attempt.
+                try {
+                    Thread.sleep(delayMs);
+                } catch (InterruptedException ie) { // if someone stops the thread.
+                    Thread.currentThread().interrupt(); // keep interrupt status.
+                    throw new RuntimeException("retry interrupted", ie);
+                }
+            }
+        }
+    }
+
 }
