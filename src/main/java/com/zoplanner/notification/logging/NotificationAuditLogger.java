@@ -21,25 +21,39 @@ public class NotificationAuditLogger {
     private final DateTimeFormatter formatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME;
 
     public NotificationAuditLogger(
-            @Value("${notification.audit.log-file:notification-logs/notifications.log}")
+            @Value("${notification.audit.log-file:logs/notifications.log}")
             String logFile
     ) {
         this.logFilePath = Path.of(logFile);
-        ensureLogDirectoryExists();
+        createDirectorySafely();
     }
 
-    private void ensureLogDirectoryExists() {
+    /**
+     * Ensures the parent directory exists.
+     * Never throws — prevents CI failures during contextLoads.
+     */
+    private void createDirectorySafely() {
         try {
             Path dir = logFilePath.getParent();
             if (dir != null && !Files.exists(dir)) {
                 Files.createDirectories(dir);
+                log.info("Created audit log directory: {}", dir.toAbsolutePath());
             }
         } catch (IOException e) {
-            log.error("Failed to create log directory", e);
+            // DO NOT rethrow — CI filesystem may be read-only
+            log.warn("Could not create audit log directory. Audit logging may be disabled. Reason: {}",
+                    e.getMessage());
         }
     }
 
-    public void logNotificationSent(String recipient, String channel, String eventType, boolean success) {
+    /**
+     * Writes an audit JSON entry into the log file.
+     * If writing fails, log an error but never interrupt the application.
+     */
+    public void logNotificationSent(String recipient,
+                                    String channel,
+                                    String eventType,
+                                    boolean success) {
 
         String timestamp = LocalDateTime.now().format(formatter);
 
@@ -56,7 +70,7 @@ public class NotificationAuditLogger {
                     StandardOpenOption.APPEND
             );
         } catch (IOException e) {
-            log.error("Failed to write notification audit log", e);
+            log.error("Failed to write notification audit log (non-fatal). Reason: {}", e.getMessage());
         }
     }
 }

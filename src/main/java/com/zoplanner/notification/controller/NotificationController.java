@@ -32,4 +32,36 @@ public class NotificationController {
             return ResponseEntity.internalServerError().build();
         }
     }
+
+    // new issue8
+    @PostMapping("/assignment-updated")
+    public ResponseEntity<Void> assignmentUpdated(@RequestBody NotificationDTO dto) {
+        log.info("Request to send 'assignment updated' notification received");
+        log.debug("DTO: {}", dto);
+
+        try {
+            notificationService.sendAssignmentUpdatedNotification(dto);
+            log.info("Assignment updated notification sent successfully");
+            return ResponseEntity.ok().build();
+        } catch (Exception e) {
+            log.error("Error sending assignment updated notification", e);
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+
+    // new issue9
+    @PostMapping("/assignment-deleted")
+    public ResponseEntity<Void> assignmentDeleted(@RequestBody NotificationDTO dto) {
+        log.info("Request to send 'assignment deleted' notification received");
+        log.debug("DTO: {}", dto);
+
+        try {
+            notificationService.sendAssignmentDeletedNotification(dto);
+            log.info("Assignment deleted notification sent successfully");
+            return ResponseEntity.ok().build();
+        } catch (Exception e) {
+            log.error("Error sending assignment deleted notification", e);
+            return ResponseEntity.internalServerError().build();
+        }
+    }
 }
