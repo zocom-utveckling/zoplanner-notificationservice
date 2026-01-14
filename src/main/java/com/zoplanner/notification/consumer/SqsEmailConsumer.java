@@ -101,14 +101,24 @@ public class SqsEmailConsumer {
                     baseEvent.eventType());
 
             if (!StringUtils.hasText(baseEvent.eventType())) {
-                log.warn("Skipping SQS message {} with missing eventType",
+                log.debug("Missing eventType for message {}, treating as legacy notification",
                         message.messageId());
+                boolean processed = handleLegacyNotification(message);
+                if (processed) {
+                    deleteMessage(message);
+                }
                 return;
             }
 
             switch (baseEvent.eventType()) {
                 case "NEW_ASSIGNMENT" -> handleNewAssignment(message.body());
-                default -> handleLegacyNotification(message);
+                default -> {
+                    boolean processed = handleLegacyNotification(message);
+                    if (processed) {
+                        deleteMessage(message);
+                    }
+                    return;
+                }
             }
 
             deleteMessage(message);
@@ -131,25 +141,26 @@ public class SqsEmailConsumer {
         }
     }
 
-    private void handleLegacyNotification(Message message) throws JsonProcessingException {
+    private boolean handleLegacyNotification(Message message) throws JsonProcessingException {
         NotificationDTO dto =
                 objectMapper.readValue(message.body(),
                         NotificationDTO.class);
 
         if (!StringUtils.hasText(dto.getRecipient())) {
             log.warn("Skipping message with missing recipient: {}", message.messageId());
-            return;
+            return false;
         }
 
         if (!StringUtils.hasText(dto.getMessage()) && !StringUtils.hasText(dto.getEmailBody())) {
             log.warn("Skipping message with missing message/email body: {}", message.messageId());
-            return;
+            return false;
         }
 
         log.debug("Handling legacy notification for recipient {}",
                 dto.getRecipient());
 
         notificationService.createNotification(dto);
+        return true;
     }
 
     private void handleNewAssignment(String messageBody) throws JsonProcessingException {
