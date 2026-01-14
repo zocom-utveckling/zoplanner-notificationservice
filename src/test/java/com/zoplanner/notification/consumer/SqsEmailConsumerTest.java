@@ -3,6 +3,7 @@ package com.zoplanner.notification.consumer;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.zoplanner.notification.dto.EmailType;
 import com.zoplanner.notification.dto.NotificationDTO;
+import com.zoplanner.notification.handler.NewAssignmentNotificationHandler;
 import com.zoplanner.notification.service.NotificationService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -29,6 +30,9 @@ import static org.mockito.Mockito.*;
 class SqsEmailConsumerTest {
 
     @Mock
+    private NewAssignmentNotificationHandler newAssignmentHandler;
+
+    @Mock
     private SqsClient sqsClient;
 
     @Mock
@@ -42,7 +46,7 @@ class SqsEmailConsumerTest {
     @BeforeEach
     void setUp() {
         objectMapper = new ObjectMapper();
-        consumer = new SqsEmailConsumer(sqsClient, notificationService, objectMapper);
+        consumer = new SqsEmailConsumer(sqsClient, notificationService, objectMapper, newAssignmentHandler);
 
         ReflectionTestUtils.setField(consumer, "queueUrl", testQueueUrl);
         ReflectionTestUtils.setField(consumer, "pollingEnabled", true);
