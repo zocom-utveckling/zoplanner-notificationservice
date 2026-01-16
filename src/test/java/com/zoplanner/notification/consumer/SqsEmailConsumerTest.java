@@ -1,8 +1,11 @@
 package com.zoplanner.notification.consumer;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.zoplanner.notification.dto.EmailType;
 import com.zoplanner.notification.dto.NotificationDTO;
+import com.zoplanner.notification.event.newassignment.NewAssignmentEvent;
+import com.zoplanner.notification.handler.NewAssignmentNotificationHandler;
 import com.zoplanner.notification.service.NotificationService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -29,6 +32,9 @@ import static org.mockito.Mockito.*;
 class SqsEmailConsumerTest {
 
     @Mock
+    private NewAssignmentNotificationHandler newAssignmentHandler;
+
+    @Mock
     private SqsClient sqsClient;
 
     @Mock
@@ -41,13 +47,20 @@ class SqsEmailConsumerTest {
 
     @BeforeEach
     void setUp() {
-        objectMapper = new ObjectMapper();
-        consumer = new SqsEmailConsumer(sqsClient, notificationService, objectMapper);
+        objectMapper = new ObjectMapper().findAndRegisterModules();
+        consumer = new SqsEmailConsumer(sqsClient, notificationService, objectMapper, newAssignmentHandler);
 
         ReflectionTestUtils.setField(consumer, "queueUrl", testQueueUrl);
         ReflectionTestUtils.setField(consumer, "pollingEnabled", true);
         ReflectionTestUtils.setField(consumer, "maxMessages", 10);
         ReflectionTestUtils.setField(consumer, "waitTimeSeconds", 20);
+    }
+
+    // För att BaseEvent routing ska fungera
+    private String toLegacyMessageBody(NotificationDTO dto) throws Exception {
+        ObjectNode node = objectMapper.valueToTree(dto);
+        node.put("eventType", "LEGACY_NOTIFICATION");
+        return objectMapper.writeValueAsString(node);
     }
 
     @Test
@@ -341,5 +354,84 @@ class SqsEmailConsumerTest {
         assertEquals(EmailType.HTML, capturedDto.getEmailType());
         assertTrue(capturedDto.getEmailBody().contains("<html>"));
     }
+
+    @Test
+    void pollMessages_WhenNewAssignmentEvent_ShouldRouteToHandlerAndDeleteMessage() {
+        // Arrange
+        String body = """
+        {
+          "eventType": "NEW_ASSIGNMENT",
+          "eventId": "123e4567-e89b-12d3-a456-426614174000",
+          "timestamp": "2025-01-01T10:00:00Z",
+          "teacherId": "t1",
+          "teacherName": "Anna Andersson",
+          "teacherEmail": "anna@test.com",
+          "assignmentId": "a1",
+          "assignmentDescription": "Test assignment",
+          "assignmentDueDate": "2025-01-31"
+        }
+        """;
+
+        Message sqsMessage = Message.builder()
+                .messageId("msg-new-assignment")
+                .receiptHandle("rh-new-assignment")
+                .body(body)
+                .build();
+
+        when(sqsClient.receiveMessage(any(ReceiveMessageRequest.class)))
+                .thenReturn(ReceiveMessageResponse.builder().messages(sqsMessage).build());
+
+        when(sqsClient.deleteMessage(any(DeleteMessageRequest.class)))
+                .thenReturn(DeleteMessageResponse.builder().build());
+
+        //Act
+        consumer.pollMessages();
+
+        //Assert
+        verify(newAssignmentHandler).handle(any(NewAssignmentEvent.class));
+        verify(notificationService, never()).createNotification(any(NotificationDTO.class));
+        verify(sqsClient).deleteMessage(any(DeleteMessageRequest.class));
+
+    }
+
+    @Test
+    void pollMessages_WhenNewAssignmentHandlerThrows_ShouldNotDeleteMessage() {
+        // Arrange
+        String body = """
+        {
+          "eventType": "NEW_ASSIGNMENT",
+          "eventId": "123e4567-e89b-12d3-a456-426614174000",
+          "timestamp": "2025-01-01T10:00:00Z",
+          "teacherId": "t1",
+          "teacherName": "Anna Andersson",
+          "teacherEmail": "anna@test.com",
+          "assignmentId": "a1",
+          "assignmentDescription": "Test assignment",
+          "assignmentDueDate": "2025-01-31"
+        }
+        """;
+
+        Message sqsMessage = Message.builder()
+                .messageId("msg-new-assignment")
+                .receiptHandle("rh-new-assignment")
+                .body(body)
+                .build();
+
+        when(sqsClient.receiveMessage(any(ReceiveMessageRequest.class)))
+                .thenReturn(ReceiveMessageResponse.builder().messages(sqsMessage).build());
+
+        doThrow(new RuntimeException("boom"))
+                .when(newAssignmentHandler)
+                .handle(any(NewAssignmentEvent.class));
+
+        // Act
+        consumer.pollMessages();
+
+        // Assert
+        verify(newAssignmentHandler).handle(any(NewAssignmentEvent.class));
+        verify(sqsClient, never()).deleteMessage(any(DeleteMessageRequest.class));
+        verify(notificationService, never()).createNotification(any(NotificationDTO.class));
+    }
+
 }
 

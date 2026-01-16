@@ -3,6 +3,9 @@ package com.zoplanner.notification.consumer;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.zoplanner.notification.dto.NotificationDTO;
+import com.zoplanner.notification.event.BaseEvent;
+import com.zoplanner.notification.event.newassignment.NewAssignmentEvent;
+import com.zoplanner.notification.handler.NewAssignmentNotificationHandler;
 import com.zoplanner.notification.service.NotificationService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,6 +28,7 @@ public class SqsEmailConsumer {
     private final SqsClient sqsClient;
     private final NotificationService notificationService;
     private final ObjectMapper objectMapper;
+    private final NewAssignmentNotificationHandler newAssignmentHandler;
 
     @Value("${notification.sqs.queueUrl:}")
     private String queueUrl;
@@ -45,10 +49,12 @@ public class SqsEmailConsumer {
     // Order matches tests: (SqsClient, NotificationService, ObjectMapper)
     public SqsEmailConsumer(SqsClient sqsClient,
                             NotificationService notificationService,
-                            ObjectMapper objectMapper) {
+                            ObjectMapper objectMapper,
+                            NewAssignmentNotificationHandler newAssignmentHandler) {
         this.sqsClient = sqsClient;
         this.notificationService = notificationService;
         this.objectMapper = objectMapper;
+        this.newAssignmentHandler = newAssignmentHandler;
     }
 
     @Scheduled(fixedDelayString = "${notification.sqs.pollDelayMs:10000}")
@@ -87,25 +93,38 @@ public class SqsEmailConsumer {
 
     void processMessage(Message message) {
         try {
-            NotificationDTO dto = objectMapper.readValue(message.body(), NotificationDTO.class);
+            BaseEvent baseEvent =
+                    objectMapper.readValue(message.body(), BaseEvent.class);
 
-            if (!StringUtils.hasText(dto.getRecipient())) {
-                log.warn("Skipping message because recipient is missing: {}", message.messageId());
+            log.debug("Processing SQS messageId {} with eventType {}",
+                    message.messageId(),
+                    baseEvent.eventType());
+
+            if (!StringUtils.hasText(baseEvent.eventType())) {
+                log.debug("Missing eventType for message {}, treating as legacy notification",
+                        message.messageId());
+                boolean processed = handleLegacyNotification(message);
+                if (processed) {
+                    deleteMessage(message);
+                }
                 return;
             }
 
-            if (!StringUtils.hasText(dto.getMessage()) && !StringUtils.hasText(dto.getEmailBody())) {
-                log.warn("Skipping message because message/email body is missing: {}", message.messageId());
-                return;
+            switch (baseEvent.eventType()) {
+                case "NEW_ASSIGNMENT" -> handleNewAssignment(message.body());
+                default -> {
+                    boolean processed = handleLegacyNotification(message);
+                    if (processed) {
+                        deleteMessage(message);
+                    }
+                    return;
+                }
             }
 
-            notificationService.createNotification(dto);
             deleteMessage(message);
-        } catch (JsonProcessingException e) {
-            log.error("Failed to deserialize SQS message body: {}", message.body(), e);
+
         } catch (Exception e) {
-            // If createNotification fails, we should NOT delete the message
-            log.error("Error processing SQS message {}", message.messageId(), e);
+            log.error("Error processing message from SQS", e);
         }
     }
 
@@ -120,6 +139,38 @@ public class SqsEmailConsumer {
         } catch (Exception e) {
             log.error("Failed to delete SQS message {}", message.messageId(), e);
         }
+    }
+
+    private boolean handleLegacyNotification(Message message) throws JsonProcessingException {
+        NotificationDTO dto =
+                objectMapper.readValue(message.body(),
+                        NotificationDTO.class);
+
+        if (!StringUtils.hasText(dto.getRecipient())) {
+            log.warn("Skipping message with missing recipient: {}", message.messageId());
+            return false;
+        }
+
+        if (!StringUtils.hasText(dto.getMessage()) && !StringUtils.hasText(dto.getEmailBody())) {
+            log.warn("Skipping message with missing message/email body: {}", message.messageId());
+            return false;
+        }
+
+        log.debug("Handling legacy notification for recipient {}",
+                dto.getRecipient());
+
+        notificationService.createNotification(dto);
+        return true;
+    }
+
+    private void handleNewAssignment(String messageBody) throws JsonProcessingException {
+        NewAssignmentEvent event = objectMapper.readValue(messageBody,
+                NewAssignmentEvent.class);
+
+        log.info("Handling NEW_ASSIGNMENT event for teacherEmail {}",
+                event.teacherEmail());
+
+        newAssignmentHandler.handle(event);
     }
 
     // setters for tests (in addition to ReflectionTestUtils)
