@@ -78,5 +78,5 @@ public class SnsNotificationDispatcher extends NotificationDispatcher {
                 .build());
     }
 
-    
+
     }

@@ -5,6 +5,9 @@ public class SubscribeRequestDto {
     private String email;
     private String teacherId;
 
+    public SubscribeRequestDto() {
+    }
+
     public String getEmail() {
         return email;
     }
