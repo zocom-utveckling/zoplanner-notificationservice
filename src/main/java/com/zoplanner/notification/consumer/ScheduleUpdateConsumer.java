@@ -4,6 +4,7 @@ import com.zoplanner.notification.event.ScheduleUpdateEvent;
 import com.zoplanner.notification.model.NotificationPreference;
 import com.zoplanner.notification.service.NotificationDispatcher;
 import com.zoplanner.notification.service.ReminderScheduler;
+import io.awspring.cloud.sqs.annotation.SqsListener;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
@@ -26,7 +27,7 @@ public class ScheduleUpdateConsumer {
         this.scheduler = scheduler;
         this.dispatcher = dispatcher;
     }
-
+    @SqsListener("zoplanner-notification-queue")
     public void handleMessage(ScheduleUpdateEvent event){
 
         if (event.getPreference() == NotificationPreference.PER_JOB_24H){
@@ -51,14 +52,14 @@ private void schedule24Reminder(ScheduleUpdateEvent event){
     );
 }
 
-@Scheduled(cron = "0 0 7 ? * MON")
-public void sendWeeklySummaries(){
-    weeklyEvent.forEach((teacherId, events) -> {
-        if (!events.isEmpty()){
-            String email = events.get(0).getTeacherEmail();
-            dispatcher.sendWeeklySummary(email);
-        }
-    });
-    weeklyEvent.clear();
-}
+    @Scheduled(cron = "0 0 7 ? * MON")
+    public void sendWeeklySummaries(){
+        weeklyEvent.forEach((teacherId, events) -> {
+            if (!events.isEmpty()){
+                dispatcher.sendWeeklySummary(teacherId);
+            }
+        });
+        weeklyEvent.clear();
+    }
+
 }

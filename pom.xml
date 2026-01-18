@@ -77,6 +77,14 @@
             <version>2.40.7</version>
         </dependency>
 
+        <!-- Source: https://mvnrepository.com/artifact/io.awspring.cloud/spring-cloud-aws-sqs -->
+        <dependency>
+            <groupId>io.awspring.cloud</groupId>
+            <artifactId>spring-cloud-aws-sqs</artifactId>
+            <version>3.4.2</version>
+            <scope>compile</scope>
+        </dependency>
+
         <!-- https://mvnrepository.com/artifact/org.hibernate/hibernate-validator -->
         <dependency>
             <groupId>org.hibernate</groupId>

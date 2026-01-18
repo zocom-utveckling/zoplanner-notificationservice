@@ -1,8 +1,6 @@
 package com.zoplanner.notification.service;
 
-import com.zoplanner.notification.consumer.ScheduleUpdateConsumer;
 import com.zoplanner.notification.event.ScheduleUpdateEvent;
-import com.zoplanner.notification.model.ConsultantSettings;
 import org.springframework.stereotype.Service;
 
 @Service

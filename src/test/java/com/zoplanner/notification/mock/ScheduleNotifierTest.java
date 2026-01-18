@@ -6,7 +6,6 @@ import com.zoplanner.notification.model.NotificationPreference;
 import com.zoplanner.notification.service.ConsultantScheduleNotifier;
 import com.zoplanner.notification.service.NotificationDispatcher;
 import com.zoplanner.notification.service.ReminderScheduler;
-import org.assertj.core.api.InstantAssert;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -21,6 +20,7 @@ import software.amazon.awssdk.services.eventbridge.model.PutRuleResponse;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.Collections;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
@@ -126,6 +126,7 @@ public class ScheduleNotifierTest {
         consumer.sendWeeklySummaries();
 
         // Assert
+        List<ScheduleUpdateEvent> events = List.of();
         verify(dispatcher).sendWeeklySummary("teacher43@school.se");
 
         System.out.println(event.toString());

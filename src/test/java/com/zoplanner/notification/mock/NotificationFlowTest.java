@@ -62,6 +62,7 @@ public class NotificationFlowTest {
         weeklyEvent.setChanges(Collections.emptyList());
 
         dispatcher.send24hReminder(perJobEvent); // Skickar reminder för 24h innan event
+        List<ScheduleUpdateEvent> events = List.of();
         dispatcher.sendWeeklySummary(weeklyEvent.getTeacherEmail()); // Skickar veckosammanfattning
         ArgumentCaptor<PublishRequest> captor = ArgumentCaptor.forClass(PublishRequest.class);
         verify(snsClient, times(2)).publish(captor.capture());
