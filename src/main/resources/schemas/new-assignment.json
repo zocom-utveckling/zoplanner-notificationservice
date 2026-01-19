@@ -28,6 +28,9 @@
     "teacherId": {
       "type": "string"
     },
+    "teacherName": {
+      "type": "string"
+    },
     "teacherEmail": {
       "type": "string",
       "format": "email"
@@ -40,7 +43,7 @@
     },
     "assignmentDueDate": {
       "type": "string",
-      "format": "date-time"
+      "format": "date"
     }
   }
 }
