@@ -2,29 +2,29 @@
 FROM eclipse-temurin:21 AS builder
 WORKDIR /app
 
-# Kopiera Maven wrapper och pom.xml
+# Copy Maven wrapper and pom.xml
 COPY .mvn/ .mvn/
 COPY mvnw mvnw.cmd pom.xml ./
 
-# Ladda ner dependencies (cachas om pom.xml inte ändras)
+# Download dependencies (cached if pom.xml doesn't change)
 RUN chmod +x ./mvnw || true
 RUN ./mvnw dependency:go-offline || true
 
-# Kopiera source code
+# Copy source code
 COPY src ./src
 
-# Bygg applikationen
+# Build the application
 RUN ./mvnw clean package -DskipTests
 
 # Stage 2: Run
 FROM eclipse-temurin:21-jre
 WORKDIR /opt/app
 
-# Kopiera jar från build stage
-COPY --from=builder /app/target/webapi-0.0.1-SNAPSHOT.jar ./app.jar
+# Copy jar from build stage
+COPY --from=builder /app/target/notification-service-1.0.0-SNAPSHOT.jar ./app.jar
 
-# Exponera port
-EXPOSE 8080
+# Expose port
+EXPOSE 8082
 
-# Kör applikationen
+# Run the application
 CMD ["java", "-jar", "app.jar"]

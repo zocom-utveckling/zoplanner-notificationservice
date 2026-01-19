@@ -15,20 +15,30 @@ public class SqsPoller {
     private final SqsClient sqsClient;
     private final ObjectMapper objectMapper;
     private final String queueUrl;
+    private final boolean pollingEnabled;
 
     public SqsPoller(
             SqsClient sqsClient,
             ObjectMapper objectMapper,
-            @org.springframework.beans.factory.annotation.Value("${aws.sqs.que-url}")
-            String queueUrl
+            @org.springframework.beans.factory.annotation.Value("${aws.sqs.queue.url}")
+            String queueUrl,
+            @org.springframework.beans.factory.annotation.Value("${aws.sqs.polling.enabled:false}")
+            boolean pollingEnabled
     ) {
         this.sqsClient = sqsClient;
         this.objectMapper = objectMapper;
         this.queueUrl = queueUrl;
+        this.pollingEnabled = pollingEnabled;
     }
 
     @PostConstruct
     public void poll() {
+        if (!pollingEnabled) {
+            log.info("SQS polling is disabled. Set aws.sqs.polling.enabled=true to enable.");
+            return;
+        }
+
+        log.info("Starting SQS polling from queue: {}", queueUrl);
         ReceiveMessageRequest request = ReceiveMessageRequest.builder()
                 .queueUrl(queueUrl)
                 .maxNumberOfMessages(1)
