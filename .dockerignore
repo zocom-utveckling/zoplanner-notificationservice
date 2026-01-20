@@ -5,6 +5,7 @@ logs/
 .gitignore
 *.md
 .env
+.env.example
 .idea
 *.iml
 *.log
