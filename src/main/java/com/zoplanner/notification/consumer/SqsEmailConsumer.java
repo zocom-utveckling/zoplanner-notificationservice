@@ -30,7 +30,7 @@ public class SqsEmailConsumer {
     private final ObjectMapper objectMapper;
     private final NewAssignmentNotificationHandler newAssignmentHandler;
 
-    @Value("${notification.sqs.queueUrl:}")
+    @Value("${aws.sqs.queue.url}")
     private String queueUrl;
 
     @Value("${notification.sqs.enabled:true}")
