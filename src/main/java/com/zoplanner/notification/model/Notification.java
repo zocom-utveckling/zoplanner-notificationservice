@@ -1,5 +1,7 @@
 package com.zoplanner.notification.model;
 
+
+
 /**
  * Enkel in-memory Notification-modell.
  * Ingen JPA / databas, bara en vanlig POJO.
@@ -10,6 +12,7 @@ public class Notification {
     private String message;
     private String recipient;
 
+
     public Notification() {
     }
 
@@ -17,6 +20,7 @@ public class Notification {
         this.message = message;
         this.recipient = recipient;
     }
+
 
     public Long getId() {
         return id;
