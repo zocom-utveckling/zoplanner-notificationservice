@@ -56,7 +56,7 @@ private void schedule24Reminder(ScheduleUpdateEvent event){
     public void sendWeeklySummaries(){
         weeklyEvent.forEach((teacherId, events) -> {
             if (!events.isEmpty()){
-                dispatcher.sendWeeklySummary(teacherId);
+                dispatcher.sendWeeklySummary(teacherId,events);
             }
         });
         weeklyEvent.clear();
