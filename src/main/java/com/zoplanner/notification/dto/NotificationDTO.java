@@ -1,8 +1,11 @@
 package com.zoplanner.notification.dto;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class NotificationDTO {
 
     @NotBlank(message = "Recipient cannot be empty")   // <-- FIX #1
@@ -13,6 +16,7 @@ public class NotificationDTO {
     private String channel;
 
     @NotBlank(message = "Event type is required")
+    @JsonAlias({"EventType", "eventType"})
     private String eventType;
 
     private String subject;
