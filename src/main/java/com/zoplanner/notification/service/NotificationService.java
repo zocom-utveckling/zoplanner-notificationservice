@@ -44,6 +44,12 @@ public class NotificationService {
             notificationRepository.save(notification);
             log.info("Notification saved");
 
+            // Sends email if channel is EMAIL and we have the email data
+            if ("EMAIL".equalsIgnoreCase(dto.getChannel()) && shouldSendEmail(dto)) {
+                log.info("Sending email notification to {}", dto.getRecipient());
+                sendEmailNotification(dto);
+            }
+
             // Audit log on success
             notificationAuditLogger.logNotificationSent(
                     dto.getRecipient(),
@@ -65,6 +71,8 @@ public class NotificationService {
             } catch (Exception auditException) {
                 log.error("Failed to write audit log after failure", auditException);
             }
+
+            throw e;
         }
     }
 
@@ -169,6 +177,27 @@ public class NotificationService {
                     throw new RuntimeException("retry interrupted", ie);
                 }
             }
+        }
+    }
+
+    // Method helper to determine if an email should be sent
+    private boolean shouldSendEmail(NotificationDTO dto) {
+        return dto.getSubject() != null && !dto.getSubject().isEmpty() &&
+                dto.getEmailBody() != null && !dto.getEmailBody().isEmpty() &&
+                dto.getRecipient() != null && !dto.getRecipient().isEmpty();
+    }
+
+    // Method to send email via EmailService
+    private void sendEmailNotification(NotificationDTO dto) {
+        try {
+            String messageId = emailService.sendEmail(
+                    dto.getRecipient(),
+                    dto.getSubject(),
+                    dto.getEmailBody()
+            );
+            log.info("Email sent successfully with MessageId: {}", messageId);
+        } catch (Exception e) {
+            log.error("Failed to send the email notification to {}", dto.getRecipient(), e);
         }
     }
 
