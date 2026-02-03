@@ -1,5 +1,6 @@
 package com.zoplanner.notification.service;
 
+import com.zoplanner.notification.dto.NotificationDTO;
 import com.zoplanner.notification.event.ScheduleUpdateEvent;
 import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Service;
@@ -32,10 +33,12 @@ public class SnsNotificationDispatcher extends NotificationDispatcher {
     @Override
     public void send24hReminder(ScheduleUpdateEvent event) {
 
+        System.out.println("📤 SKICKAR SNS MAIL TILL teacherId=" + event.getTeacherId());
+
         snsClient.publish(PublishRequest.builder()
                 .topicArn(topicArn)
-                .subject("Jobb påminnelse")
-                .message("Hej! Du har ett jobb planerat vid " + event.getEventTime())
+                .subject("TEST – Schema notis")
+                .message("TEST: Jobb planerat " + event.getEventTime())
                 .messageAttributes(Map.of(
                         "teacherId", MessageAttributeValue.builder()
                                 .dataType("String")
@@ -43,6 +46,18 @@ public class SnsNotificationDispatcher extends NotificationDispatcher {
                                 .build()
                 ))
                 .build());
+
+//        snsClient.publish(PublishRequest.builder()
+//                .topicArn(topicArn)
+//                .subject("Jobb påminnelse")
+//                .message("Hej! Du har ett jobb planerat vid " + event.getEventTime())
+//                .messageAttributes(Map.of(
+//                        "teacherId", MessageAttributeValue.builder()
+//                                .dataType("String")
+//                                .stringValue(event.getTeacherId())
+//                                .build()
+//                ))
+//                .build());
     }
 
     public void sendWeeklySummary(String teacherId, List<ScheduleUpdateEvent> events) {
@@ -94,4 +109,22 @@ public class SnsNotificationDispatcher extends NotificationDispatcher {
     }
 
 
+
+    @Override
+    public void send(NotificationDTO notification) {
+
+        System.out.println("📤 SKICKAR SNS MAIL TILL teacherId=" + notification.getTeacherId());
+
+        snsClient.publish(PublishRequest.builder()
+                .topicArn(topicArn)
+                .subject(notification.getSubject())
+                .message(notification.getMessage())
+                .messageAttributes(Map.of(
+                        "teacherId", MessageAttributeValue.builder()
+                                .dataType("String")
+                                .stringValue(notification.getTeacherId())
+                                .build()
+                ))
+                .build());
     }
+}

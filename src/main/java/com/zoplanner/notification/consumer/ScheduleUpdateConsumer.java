@@ -30,16 +30,21 @@ public class ScheduleUpdateConsumer {
     @SqsListener("zoplanner-notification-queue")
     public void handleMessage(ScheduleUpdateEvent event){
 
-        if (event.getPreference() == NotificationPreference.PER_JOB_24H){
-            schedule24Reminder(event);
-        }
-        if (event.getPreference() == NotificationPreference.WEEKLY_SUMMARY){
-            weeklyEvent.computeIfAbsent(
-                    event.getTeacherId(),
-                    k -> new java.util.concurrent.CopyOnWriteArrayList<>()
+        System.out.println("📥 MOTTAGET EVENT FRÅN SQS:");
+        System.out.println(event);
 
-            ).add(event);
-        }
+        dispatcher.send24hReminder(event);
+
+//        if (event.getPreference() == NotificationPreference.PER_JOB_24H){
+//            schedule24Reminder(event);
+//        }
+//        if (event.getPreference() == NotificationPreference.WEEKLY_SUMMARY){
+//            weeklyEvent.computeIfAbsent(
+//                    event.getTeacherId(),
+//                    k -> new java.util.concurrent.CopyOnWriteArrayList<>()
+//
+//            ).add(event);
+//        }
 
 
 
