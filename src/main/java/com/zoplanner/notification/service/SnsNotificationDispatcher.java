@@ -33,12 +33,11 @@ public class SnsNotificationDispatcher extends NotificationDispatcher {
     @Override
     public void send24hReminder(ScheduleUpdateEvent event) {
 
-        System.out.println("📤 SKICKAR SNS MAIL TILL teacherId=" + event.getTeacherId());
 
         snsClient.publish(PublishRequest.builder()
                 .topicArn(topicArn)
-                .subject("TEST – Schema notis")
-                .message("TEST: Jobb planerat " + event.getEventTime())
+                .subject("Jobb påminnelse")
+                .message("Hej! Du har ett jobb planerat vid " + event.getEventTime())
                 .messageAttributes(Map.of(
                         "teacherId", MessageAttributeValue.builder()
                                 .dataType("String")
@@ -46,35 +45,40 @@ public class SnsNotificationDispatcher extends NotificationDispatcher {
                                 .build()
                 ))
                 .build());
-
-//        snsClient.publish(PublishRequest.builder()
-//                .topicArn(topicArn)
-//                .subject("Jobb påminnelse")
-//                .message("Hej! Du har ett jobb planerat vid " + event.getEventTime())
-//                .messageAttributes(Map.of(
-//                        "teacherId", MessageAttributeValue.builder()
-//                                .dataType("String")
-//                                .stringValue(event.getTeacherId())
-//                                .build()
-//                ))
-//                .build());
     }
 
     public void sendWeeklySummary(String teacherId, List<ScheduleUpdateEvent> events) {
+
         StringBuilder message = new StringBuilder("Här är din veckosammanfattning:\n\n");
 
         if (events.isEmpty()) {
             message.append("Inga schemalagda jobb denna vecka.");
-        } else {
-            message.append("Du har ").append(events.size()).append(" jobb schemalagda:\n\n");
-
-            events.forEach(event -> {
-                message.append("- ")
-                        .append(event.getEventTime().atZone(ZoneId.of("Europe/Stockholm"))
-                                .format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")))
-                        .append("\n");
-            });
+            return;
         }
+
+        message.append("Du har ")
+                .append(events.size())
+                .append(" jobb schemalagda:\n\n");
+
+        for (ScheduleUpdateEvent event : events) {
+
+            String when = event.getEventTime()
+                    .atZone(ZoneId.of("Europe/Stockholm"))
+                    .format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"));
+
+            String what =
+                    event.getMessage() != null && !event.getMessage().isBlank()
+                            ? event.getMessage()
+                            : "Schemalagt jobb";
+
+
+            message.append("- ")
+                    .append(when)
+                    .append(" – ")
+                    .append(what)
+                    .append("\n");
+        }
+
 
         snsClient.publish(PublishRequest.builder()
                 .topicArn(topicArn)
@@ -110,21 +114,21 @@ public class SnsNotificationDispatcher extends NotificationDispatcher {
 
 
 
-    @Override
-    public void send(NotificationDTO notification) {
-
-        System.out.println("📤 SKICKAR SNS MAIL TILL teacherId=" + notification.getTeacherId());
-
-        snsClient.publish(PublishRequest.builder()
-                .topicArn(topicArn)
-                .subject(notification.getSubject())
-                .message(notification.getMessage())
-                .messageAttributes(Map.of(
-                        "teacherId", MessageAttributeValue.builder()
-                                .dataType("String")
-                                .stringValue(notification.getTeacherId())
-                                .build()
-                ))
-                .build());
-    }
+//    @Override
+//    public void send(NotificationDTO notification) {
+//
+//        System.out.println("📤 SKICKAR SNS MAIL TILL teacherId=" + notification.getTeacherId());
+//
+//        snsClient.publish(PublishRequest.builder()
+//                .topicArn(topicArn)
+//                .subject(notification.getSubject())
+//                .message(notification.getMessage())
+//                .messageAttributes(Map.of(
+//                        "teacherId", MessageAttributeValue.builder()
+//                                .dataType("String")
+//                                .stringValue(notification.getTeacherId())
+//                                .build()
+//                ))
+//                .build());
+//    }
 }

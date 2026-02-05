@@ -8,6 +8,7 @@ import com.zoplanner.notification.event.newassignment.NewAssignmentEvent;
 import com.zoplanner.notification.handler.NewAssignmentNotificationHandler;
 import com.zoplanner.notification.service.NotificationDispatcher;
 import com.zoplanner.notification.service.NotificationService;
+import com.zoplanner.notification.service.WeeklyEventStore;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -44,12 +45,15 @@ class SqsEmailConsumerTest {
     private SqsEmailConsumer consumer;
     private ObjectMapper objectMapper;
     private final String testQueueUrl = "https://sqs.eu-north-1.amazonaws.com/123456789012/test-queue";
-
+    private WeeklyEventStore weeklyEventStore;
+    private NotificationDispatcher notificationsDispatcher;
     @BeforeEach
     void setUp() {
         objectMapper = new ObjectMapper().findAndRegisterModules();
-        NotificationDispatcher notificationsDispatcher = null   ;
-        consumer = new SqsEmailConsumer(sqsClient, notificationService, objectMapper, newAssignmentHandler,notificationsDispatcher);
+
+
+        consumer = new SqsEmailConsumer(sqsClient, notificationService, objectMapper, newAssignmentHandler,
+                notificationsDispatcher,weeklyEventStore);
 
         ReflectionTestUtils.setField(consumer, "queueUrl", testQueueUrl);
         ReflectionTestUtils.setField(consumer, "pollingEnabled", true);

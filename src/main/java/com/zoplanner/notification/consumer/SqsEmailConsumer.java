@@ -4,10 +4,12 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.zoplanner.notification.dto.NotificationDTO;
 import com.zoplanner.notification.event.BaseEvent;
+import com.zoplanner.notification.event.ScheduleUpdateEvent;
 import com.zoplanner.notification.event.newassignment.NewAssignmentEvent;
 import com.zoplanner.notification.handler.NewAssignmentNotificationHandler;
 import com.zoplanner.notification.service.NotificationDispatcher;
 import com.zoplanner.notification.service.NotificationService;
+import com.zoplanner.notification.service.WeeklyEventStore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -30,7 +32,8 @@ public class SqsEmailConsumer {
     private final NotificationService notificationService;
     private final ObjectMapper objectMapper;
     private final NewAssignmentNotificationHandler newAssignmentHandler;
-    private NotificationDispatcher notificationDispatcher;
+    private final NotificationDispatcher notificationDispatcher;
+    private final WeeklyEventStore weeklyEventStore;
 
     @Value("${aws.sqs.queue.url}")
     private String queueUrl;
@@ -53,12 +56,14 @@ public class SqsEmailConsumer {
                             NotificationService notificationService,
                             ObjectMapper objectMapper,
                             NewAssignmentNotificationHandler newAssignmentHandler,
-                            NotificationDispatcher notificationDispatcher) {
+                            NotificationDispatcher notificationDispatcher,
+                            WeeklyEventStore weeklyEventStore) {
         this.sqsClient = sqsClient;
         this.notificationService = notificationService;
         this.objectMapper = objectMapper;
         this.newAssignmentHandler = newAssignmentHandler;
         this.notificationDispatcher = notificationDispatcher;
+        this.weeklyEventStore = weeklyEventStore;
     }
 
     @Scheduled(fixedDelayString = "${notification.sqs.pollDelayMs:10000}")
@@ -107,6 +112,7 @@ public class SqsEmailConsumer {
                 log.warn("❌ Saknar eventType – ignorerar message {}", message.messageId());
                 return;
             }
+
             NotificationDTO notificationDTO =
                     objectMapper.readValue(message.body(), NotificationDTO.class);
 
@@ -125,9 +131,25 @@ public class SqsEmailConsumer {
                     }
                 }
 
+                case "SCHEDULE_REMINDER_24H" -> {
+                    ScheduleUpdateEvent event = objectMapper.readValue(message.body(),ScheduleUpdateEvent.class);
+
+                    weeklyEventStore.addEvent(event);
+
+                    notificationDispatcher.send24hReminder(event);
+                    deleteMessage(message);
+                }
+                case "SCHEDULE_UPDATED" -> {
+                    ScheduleUpdateEvent event =
+                            objectMapper.readValue(message.body(), ScheduleUpdateEvent.class);
+
+                    weeklyEventStore.addEvent(event);
+                    deleteMessage(message);
+                }
+
+
                 default -> {
                     log.warn("⚠️ Okänt eventType {}, ignorerar", baseEvent.eventType());
-                    notificationDispatcher.send(notificationDTO);
 
                 }
             }
