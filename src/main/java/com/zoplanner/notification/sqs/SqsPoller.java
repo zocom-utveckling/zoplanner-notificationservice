@@ -2,11 +2,18 @@ package com.zoplanner.notification.sqs;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.zoplanner.notification.event.newassignment.NewAssignmentEvent;
-import jakarta.annotation.PostConstruct;
+import com.zoplanner.notification.notification.NotificationPublisher;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import software.amazon.awssdk.services.sqs.SqsClient;
-import software.amazon.awssdk.services.sqs.model.*;
+import software.amazon.awssdk.services.sqs.model.DeleteMessageRequest;
+import software.amazon.awssdk.services.sqs.model.Message;
+import software.amazon.awssdk.services.sqs.model.MessageSystemAttributeName;
+import software.amazon.awssdk.services.sqs.model.ReceiveMessageRequest;
+import java.util.List;
+import java.util.UUID;
 
 @Slf4j
 @Component
@@ -16,53 +23,83 @@ public class SqsPoller {
     private final ObjectMapper objectMapper;
     private final String queueUrl;
     private final boolean pollingEnabled;
+    private final NotificationPublisher notificationPublisher;
+    private final int maxMessages;
+    private final int waitTimeSeconds;
 
     public SqsPoller(
             SqsClient sqsClient,
             ObjectMapper objectMapper,
-            @org.springframework.beans.factory.annotation.Value("${aws.sqs.queue.url}")
-            String queueUrl,
-            @org.springframework.beans.factory.annotation.Value("${aws.sqs.polling.enabled:false}")
-            boolean pollingEnabled
+            NotificationPublisher notificationPublisher,
+            @Value("${aws.sqs.queue.url:}") String queueUrl,
+            @Value("${aws.sqs.polling.enabled:true}") boolean pollingEnabled,
+            @Value("${aws.sqs.max.messages:10}") int maxMessages,
+            @Value("${aws.sqs.wait.time.seconds:20}") int waitTimeSeconds
     ) {
         this.sqsClient = sqsClient;
         this.objectMapper = objectMapper;
         this.queueUrl = queueUrl;
         this.pollingEnabled = pollingEnabled;
+        this.notificationPublisher = notificationPublisher;
+        this.maxMessages = maxMessages;
+        this.waitTimeSeconds = waitTimeSeconds;
     }
 
-    @PostConstruct
+    @Scheduled(fixedDelayString = "${aws.sqs.polling.delay.ms:5000}")
     public void poll() {
         if (!pollingEnabled) {
-            log.info("SQS polling is disabled. Set aws.sqs.polling.enabled=true to enable.");
+            log.debug("SQS polling is disabled (aws.sqs.polling.enabled=false).");
             return;
         }
 
-        log.info("Starting SQS polling from queue: {}", queueUrl);
+        if (queueUrl == null || queueUrl.isBlank()) {
+            log.warn("SQS queue URL is empty (aws.sqs.queue.url=).");
+            return;
+        }
+
         ReceiveMessageRequest request = ReceiveMessageRequest.builder()
                 .queueUrl(queueUrl)
-                .maxNumberOfMessages(1)
-                .waitTimeSeconds(20)
+                .maxNumberOfMessages(Math.min(maxMessages, 10))
+                .waitTimeSeconds(waitTimeSeconds)
+                .messageSystemAttributeNames(MessageSystemAttributeName.SENT_TIMESTAMP)
                 .build();
 
-        sqsClient.receiveMessage(request).messages().forEach(this::handleMessage);
+        List<Message> messages = sqsClient.receiveMessage(request).messages();
+        if (messages.isEmpty()) {
+            log.debug("No messages received from SQS.");
+            return;
+        }
+
+        for (Message message : messages) {
+            handleMessage(message);
+        }
     }
 
     private void handleMessage(Message message) {
         try {
-            NewAssignmentEvent event =
-                    objectMapper.readValue(message.body(), NewAssignmentEvent.class);
+            NewAssignmentEvent event = objectMapper.readValue(message.body(), NewAssignmentEvent.class);
+            log.info(
+                    "Received SQS messageId={} SentTs={} eventType={} eventId={}",
+                    message.messageId(),
+                    sentTimestamp(message),
+                    event.eventType(),
+                    safeEventId(event)
+            );
 
-            log.info("Received NEW_ASSIGNMENT event: {}", event.eventId());
+            if (event.eventType() == null || !event.eventType().equalsIgnoreCase("NEW_ASSIGNMENT")) {
+                log.warn("Ignoring messageId={} due to unsupported eventType={}", message.messageId(), event.eventType());
+                // deleteMessage(message); ta bort "//" om meddelande ska tas bort och inte felsökas
+                return;
+            }
 
-            /*
-            Här ska det vara kod för att skicka mail
-            t.ex emailService.sendNewAssignmentEmail(event);
-            */
+            // 1. Publish to SNS
+            notificationPublisher.publishNewAssignment(event);
 
+            // 2. Delete only if publish successfull
             deleteMessage(message);
+
         } catch (Exception e) {
-            log.error("Failed to process message", e);
+            log.error("Failed processing SQS messageId={} (will retry later). Body={}", message.messageId(), message.body(), e);
         }
     }
 
@@ -71,7 +108,20 @@ public class SqsPoller {
                 .queueUrl(queueUrl)
                 .receiptHandle(message.receiptHandle())
                 .build());
+
+        log.debug("Deleted SQS messageId={}", message.messageId());
     }
+
+    private String safeEventId(NewAssignmentEvent event) {
+        UUID id = event.eventId();
+        return id != null ? id.toString() : "null";
+    }
+
+    private String sentTimestamp(Message message) {
+        return message.attributesAsStrings()
+                .getOrDefault(MessageSystemAttributeName.SENT_TIMESTAMP.toString(), "unknown");
+    }
+
 
 
 }

@@ -11,12 +11,18 @@ import software.amazon.awssdk.services.sns.SnsClient;
 @Configuration
 public class AwsSnsConfig {
 
+    @Value("${aws.region:eu-north-1}")
+    private String region;
+
+    @Value("${aws.accessKeyId}")
+    private String accessKeyId;
+
+    @Value("${aws.secretAccessKey}")
+    private String secretAccessKey;
+
+
     @Bean
-    public SnsClient snsClient(
-            @Value("${AWS_REGION}") String region,
-            @Value("${AWS_ACCESS_KEY_ID") String accessKeyId,
-            @Value("${AWS_SECRET_ACCESS_KEY}") String secretAccessKey
-    ) {
+    public SnsClient snsClient() {
         return SnsClient.builder()
                 .region(Region.of(region))
                 .credentialsProvider(
