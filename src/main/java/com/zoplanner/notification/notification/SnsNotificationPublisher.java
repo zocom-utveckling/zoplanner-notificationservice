@@ -8,8 +8,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import software.amazon.awssdk.services.sns.SnsClient;
+import software.amazon.awssdk.services.sns.model.MessageAttributeValue;
 import software.amazon.awssdk.services.sns.model.PublishRequest;
 import software.amazon.awssdk.services.sns.model.PublishResponse;
+import java.util.Map;
 
 @Slf4j
 @Component
@@ -35,12 +37,24 @@ public class SnsNotificationPublisher implements NotificationPublisher {
             throw new IllegalStateException("Topic ARN is empty. Check aws.sns.topic.email.");
         }
 
-        String payload = toJson(event);
+        String message = buildMessage(event);
+
+        Map<String, MessageAttributeValue> attrs = Map.of(
+                "teacherId", MessageAttributeValue.builder()
+                        .dataType("String")
+                        .stringValue(event.teacherId())
+                        .build(),
+                "eventType", MessageAttributeValue.builder()
+                        .dataType("String")
+                        .stringValue(event.eventType())
+                        .build()
+        );
 
         PublishRequest request = PublishRequest.builder()
                 .topicArn(topicArn)
                 .subject("NEW_ASSIGNMENT")
-                .message(payload)
+                .message(message)
+                .messageAttributes(attrs)
                 .build();
 
         PublishResponse response = snsClient.publish(request);
@@ -48,11 +62,30 @@ public class SnsNotificationPublisher implements NotificationPublisher {
         log.info("Published NEW_ASSIGNMENT to SNS. messageId: {} topicArn: {}", response.messageId(), topicArn);
     }
 
+    private String buildMessage(NewAssignmentEvent e) {
+        return """
+                Du har fått en ny uppgift:
+
+                Lärare: %s
+                Beskrivning: %s
+                Deadline: %s
+                """.formatted(
+                safe(e.teacherName()),
+                safe(e.assignmentDescription()),
+                e.assignmentDueDate() != null ? e.assignmentDueDate().toString() : "-"
+        );
+    }
+
+    private String safe(String s) {
+        return (s == null || s.isBlank()) ? "-" : s;
+    }
+
+    @SuppressWarnings("unused")
     private String toJson(NewAssignmentEvent event) {
         try {
             return objectMapper.writeValueAsString(event);
-        } catch (JsonProcessingException e) {
-            throw new RuntimeException("Failed to serialize event to JSON for publish", e);
+        } catch (JsonProcessingException ex) {
+            throw new RuntimeException("Failed to serialize event to JSON", ex);
         }
     }
 }
