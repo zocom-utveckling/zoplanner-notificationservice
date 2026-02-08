@@ -11,6 +11,7 @@ import software.amazon.awssdk.services.sns.model.SubscribeRequest;
 
 
 import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
@@ -33,11 +34,12 @@ public class SnsNotificationDispatcher extends NotificationDispatcher {
     @Override
     public void send24hReminder(ScheduleUpdateEvent event) {
 
-
+        ZonedDateTime swedishTime =
+                event.getEventTime().atZone(ZoneId.of("Europe/Stockholm"));
         snsClient.publish(PublishRequest.builder()
                 .topicArn(topicArn)
                 .subject("Jobb påminnelse")
-                .message("Hej! Du har ett jobb planerat vid " + event.getEventTime())
+                .message("Hej! Du har ett jobb planerat vid " + swedishTime)
                 .messageAttributes(Map.of(
                         "teacherId", MessageAttributeValue.builder()
                                 .dataType("String")
@@ -113,22 +115,4 @@ public class SnsNotificationDispatcher extends NotificationDispatcher {
     }
 
 
-
-//    @Override
-//    public void send(NotificationDTO notification) {
-//
-//        System.out.println("📤 SKICKAR SNS MAIL TILL teacherId=" + notification.getTeacherId());
-//
-//        snsClient.publish(PublishRequest.builder()
-//                .topicArn(topicArn)
-//                .subject(notification.getSubject())
-//                .message(notification.getMessage())
-//                .messageAttributes(Map.of(
-//                        "teacherId", MessageAttributeValue.builder()
-//                                .dataType("String")
-//                                .stringValue(notification.getTeacherId())
-//                                .build()
-//                ))
-//                .build());
-//    }
 }

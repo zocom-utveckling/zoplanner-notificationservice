@@ -23,7 +23,8 @@ public class WeeklySummaryService {
         this.dispatcher = dispatcher;
     }
 
-    @Scheduled(cron = "0 0 10  ? * SUN", zone = "Europe/Stockholm")
+//    @Scheduled(cron = "0 0 10  ? * SUN", zone = "Europe/Stockholm")
+    @Scheduled(fixedDelay = 30000)
     public void sendWeeklySummaries() {
 
 

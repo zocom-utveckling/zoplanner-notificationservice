@@ -7,6 +7,7 @@ import com.zoplanner.notification.event.BaseEvent;
 import com.zoplanner.notification.event.ScheduleUpdateEvent;
 import com.zoplanner.notification.event.newassignment.NewAssignmentEvent;
 import com.zoplanner.notification.handler.NewAssignmentNotificationHandler;
+import com.zoplanner.notification.model.NotificationPreference;
 import com.zoplanner.notification.service.NotificationDispatcher;
 import com.zoplanner.notification.service.NotificationService;
 import com.zoplanner.notification.service.WeeklyEventStore;
@@ -32,8 +33,9 @@ public class SqsEmailConsumer {
     private final NotificationService notificationService;
     private final ObjectMapper objectMapper;
     private final NewAssignmentNotificationHandler newAssignmentHandler;
-    private final NotificationDispatcher notificationDispatcher;
-    private final WeeklyEventStore weeklyEventStore;
+    private  NotificationDispatcher notificationDispatcher;
+    private  WeeklyEventStore weeklyEventStore;
+    private ScheduleUpdateConsumer updateConsumer;
 
     @Value("${aws.sqs.queue.url}")
     private String queueUrl;
@@ -55,15 +57,13 @@ public class SqsEmailConsumer {
     public SqsEmailConsumer(SqsClient sqsClient,
                             NotificationService notificationService,
                             ObjectMapper objectMapper,
-                            NewAssignmentNotificationHandler newAssignmentHandler,
-                            NotificationDispatcher notificationDispatcher,
-                            WeeklyEventStore weeklyEventStore) {
+                            NewAssignmentNotificationHandler newAssignmentHandler, ScheduleUpdateConsumer updateConsumer
+    ) {
         this.sqsClient = sqsClient;
         this.notificationService = notificationService;
         this.objectMapper = objectMapper;
         this.newAssignmentHandler = newAssignmentHandler;
-        this.notificationDispatcher = notificationDispatcher;
-        this.weeklyEventStore = weeklyEventStore;
+        this.updateConsumer = updateConsumer;
     }
 
     @Scheduled(fixedDelayString = "${notification.sqs.pollDelayMs:10000}")
@@ -131,19 +131,12 @@ public class SqsEmailConsumer {
                     }
                 }
 
-                case "SCHEDULE_REMINDER_24H" -> {
-                    ScheduleUpdateEvent event = objectMapper.readValue(message.body(),ScheduleUpdateEvent.class);
-
-                    weeklyEventStore.addEvent(event);
-
-                    notificationDispatcher.send24hReminder(event);
-                    deleteMessage(message);
-                }
                 case "SCHEDULE_UPDATED" -> {
                     ScheduleUpdateEvent event =
                             objectMapper.readValue(message.body(), ScheduleUpdateEvent.class);
 
-                    weeklyEventStore.addEvent(event);
+                    updateConsumer.handleMessage(event);
+
                     deleteMessage(message);
                 }
 

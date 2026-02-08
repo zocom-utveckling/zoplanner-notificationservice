@@ -24,7 +24,7 @@ public class NotificationDTO {
 
     private String emailBody;
     private boolean htmlEmail;
-
+    private String preference;
     private String teacherId;
 
     private EmailType emailType;
@@ -39,7 +39,8 @@ public class NotificationDTO {
                            String message,
                            String emailBody,
                            boolean htmlEmail,
-                           EmailType emailType) {
+                           EmailType emailType,
+                           String preference ) {
         this.recipient = recipient;
         this.channel = channel;
         this.eventType = eventType;
@@ -49,6 +50,7 @@ public class NotificationDTO {
         this.htmlEmail = htmlEmail;
         this.emailType = emailType;
         this.teacherId = teacherId;
+        this.preference = preference;
     }
 
     // getters & setters…
@@ -85,6 +87,11 @@ public class NotificationDTO {
     public void setTeacherId(String teacherId) {
         this.teacherId = teacherId;
     }
+
+    public String getPreference() {
+        return preference;
+    }
+
     // builder:
 
     public static Builder builder() { return new Builder(); }
@@ -99,6 +106,7 @@ public class NotificationDTO {
         private String emailBody;
         private boolean htmlEmail;
         private EmailType emailType;
+        private String preference;
 
 
         private Builder() {}
@@ -123,7 +131,8 @@ public class NotificationDTO {
                     message,
                     emailBody,
                     htmlEmail,
-                    emailType
+                    emailType,
+                    preference
             );
         }
     }

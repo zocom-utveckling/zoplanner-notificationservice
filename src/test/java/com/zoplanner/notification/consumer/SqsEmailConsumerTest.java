@@ -45,15 +45,13 @@ class SqsEmailConsumerTest {
     private SqsEmailConsumer consumer;
     private ObjectMapper objectMapper;
     private final String testQueueUrl = "https://sqs.eu-north-1.amazonaws.com/123456789012/test-queue";
-    private WeeklyEventStore weeklyEventStore;
-    private NotificationDispatcher notificationsDispatcher;
+    private ScheduleUpdateConsumer updateConsumer;
     @BeforeEach
     void setUp() {
         objectMapper = new ObjectMapper().findAndRegisterModules();
 
 
-        consumer = new SqsEmailConsumer(sqsClient, notificationService, objectMapper, newAssignmentHandler,
-                notificationsDispatcher,weeklyEventStore);
+        consumer = new SqsEmailConsumer(sqsClient, notificationService, objectMapper, newAssignmentHandler,updateConsumer);
 
         ReflectionTestUtils.setField(consumer, "queueUrl", testQueueUrl);
         ReflectionTestUtils.setField(consumer, "pollingEnabled", true);
