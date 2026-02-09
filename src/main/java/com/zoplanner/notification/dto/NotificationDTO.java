@@ -15,6 +15,7 @@ public class NotificationDTO {
     private String channel;
 
     @NotBlank(message = "Event type is required")
+    @JsonAlias({"EventType", "eventType"})
     private String eventType;
 
     private String subject;
