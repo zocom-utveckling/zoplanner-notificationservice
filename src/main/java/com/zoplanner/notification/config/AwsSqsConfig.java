@@ -11,7 +11,7 @@ import software.amazon.awssdk.services.sqs.SqsClient;
 @Configuration
 public class AwsSqsConfig {
 
-    @Value("${aws.region}")
+    @Value("${aws.region:eu-north-1}")
     private String region;
 
     @Value("${aws.accessKeyId}")
@@ -24,9 +24,11 @@ public class AwsSqsConfig {
     public SqsClient sqsClient() {
         return SqsClient.builder()
                 .region(Region.of(region))
-                .credentialsProvider(StaticCredentialsProvider.create(
-                        AwsBasicCredentials.create(accessKeyId, secretAccessKey)
-                ))
+                .credentialsProvider(
+                        StaticCredentialsProvider.create(
+                                AwsBasicCredentials.create(accessKeyId, secretAccessKey)
+                        )
+                )
                 .build();
     }
 }
