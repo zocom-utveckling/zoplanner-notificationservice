@@ -3,6 +3,8 @@ package com.zoplanner.notification.dto;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import com.fasterxml.jackson.annotation.JsonAlias;
+
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class NotificationDTO {
