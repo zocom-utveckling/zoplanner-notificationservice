@@ -4,4 +4,6 @@ public enum NotificationPreference {
     WEEKLY_SUMMARY,
     PER_JOB_24H
 
+
+
 }

@@ -127,7 +127,7 @@ public class ScheduleNotifierTest {
 
         // Assert
         List<ScheduleUpdateEvent> events = List.of();
-        verify(dispatcher).sendWeeklySummary("teacher43@school.se");
+        verify(dispatcher).sendWeeklySummary("teacher43@school.se", events);
 
         System.out.println(event.toString());
     }

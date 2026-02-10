@@ -1,10 +1,12 @@
 package com.zoplanner.notification.event;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.zoplanner.notification.model.NotificationPreference;
 
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.List;
+@JsonIgnoreProperties(ignoreUnknown = true)
 
 public class ScheduleUpdateEvent {
 
@@ -15,13 +17,14 @@ public class ScheduleUpdateEvent {
     private LocalDateTime createdAt;
     private List<ScheduleChange> changes;
     private NotificationPreference preference;
+    private String message;
 
     public ScheduleUpdateEvent() {
     }
 
     public ScheduleUpdateEvent(String teacherId, String teacherEmail, String source,
                                LocalDateTime createdAt, List<ScheduleChange> changes, NotificationPreference preference,
-                               Instant eventTime) {
+                               Instant eventTime, String message) {
         this.teacherId = teacherId;
         this.teacherEmail = teacherEmail;
         this.source = source;
@@ -29,6 +32,7 @@ public class ScheduleUpdateEvent {
         this.changes = changes;
         this.preference = preference;
         this.eventTime = eventTime;
+        this.message = message;
     }
 
     public String getTeacherId() {
@@ -81,6 +85,10 @@ public class ScheduleUpdateEvent {
 
     public void setPreference(NotificationPreference preference) {
         this.preference = preference;
+    }
+
+    public String getMessage() {
+        return message;
     }
 
     @Override

@@ -1,6 +1,5 @@
 package com.zoplanner.notification.dto;
 
-import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
@@ -26,6 +25,8 @@ public class NotificationDTO {
 
     private String emailBody;
     private boolean htmlEmail;
+    private String preference;
+    private String teacherId;
 
     private EmailType emailType;
 
@@ -34,11 +35,13 @@ public class NotificationDTO {
     public NotificationDTO(String recipient,
                            String channel,
                            String eventType,
+                           String teacherId,
                            String subject,
                            String message,
                            String emailBody,
                            boolean htmlEmail,
-                           EmailType emailType) {
+                           EmailType emailType,
+                           String preference ) {
         this.recipient = recipient;
         this.channel = channel;
         this.eventType = eventType;
@@ -47,6 +50,8 @@ public class NotificationDTO {
         this.emailBody = emailBody;
         this.htmlEmail = htmlEmail;
         this.emailType = emailType;
+        this.teacherId = teacherId;
+        this.preference = preference;
     }
 
     // getters & setters…
@@ -76,6 +81,18 @@ public class NotificationDTO {
     public EmailType getEmailType() { return emailType; }
     public void setEmailType(EmailType emailType) { this.emailType = emailType; }
 
+    public String getTeacherId() {
+        return teacherId;
+    }
+
+    public void setTeacherId(String teacherId) {
+        this.teacherId = teacherId;
+    }
+
+    public String getPreference() {
+        return preference;
+    }
+
     // builder:
 
     public static Builder builder() { return new Builder(); }
@@ -84,11 +101,14 @@ public class NotificationDTO {
         private String recipient;
         private String channel;
         private String eventType;
+        private String teacherId;
         private String subject;
         private String message;
         private String emailBody;
         private boolean htmlEmail;
         private EmailType emailType;
+        private String preference;
+
 
         private Builder() {}
 
@@ -98,6 +118,7 @@ public class NotificationDTO {
         public Builder subject(String subject) { this.subject = subject; return this; }
         public Builder message(String message) { this.message = message; return this; }
         public Builder emailBody(String emailBody) { this.emailBody = emailBody; return this; }
+        public Builder teacherId(String teacherId) {this.teacherId = teacherId; return this;}
         public Builder htmlEmail(boolean htmlEmail) { this.htmlEmail = htmlEmail; return this; }
         public Builder emailType(EmailType emailType) { this.emailType = emailType; return this; }
 
@@ -106,11 +127,13 @@ public class NotificationDTO {
                     recipient,
                     channel,
                     eventType,
+                    teacherId,
                     subject,
                     message,
                     emailBody,
                     htmlEmail,
-                    emailType
+                    emailType,
+                    preference
             );
         }
     }

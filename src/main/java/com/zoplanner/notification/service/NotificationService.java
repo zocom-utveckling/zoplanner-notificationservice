@@ -3,6 +3,7 @@ package com.zoplanner.notification.service;
 import com.zoplanner.notification.dto.NotificationDTO;
 import com.zoplanner.notification.logging.NotificationAuditLogger;
 import com.zoplanner.notification.model.Notification;
+import com.zoplanner.notification.model.NotificationPreference;
 import com.zoplanner.notification.repository.NotificationRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,6 +18,7 @@ public class NotificationService {
     private final NotificationTemplate notificationTemplate;
     private final NotificationAuditLogger notificationAuditLogger;
     private final EmailService emailService;
+    private NotificationPreference preference;
 
     // Constructor used by Spring + tests
     public NotificationService(
@@ -32,6 +34,13 @@ public class NotificationService {
     }
 
     public void createNotification(NotificationDTO dto) {
+        if ("PER_JOB_24H".equals(dto.getPreference())
+                || "WEEKLY_SUMMARY".equals(dto.getPreference())) {
+            log.info("Skipping immediate notification due to preference");
+            return;
+        }
+
+
         log.info("Creating notification");
         log.debug("DTO data: {}", dto);
 

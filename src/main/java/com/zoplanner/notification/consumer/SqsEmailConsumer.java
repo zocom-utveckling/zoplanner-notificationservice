@@ -4,9 +4,13 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.zoplanner.notification.dto.NotificationDTO;
 import com.zoplanner.notification.event.BaseEvent;
+import com.zoplanner.notification.event.ScheduleUpdateEvent;
 import com.zoplanner.notification.event.newassignment.NewAssignmentEvent;
 import com.zoplanner.notification.handler.NewAssignmentNotificationHandler;
+import com.zoplanner.notification.model.NotificationPreference;
+import com.zoplanner.notification.service.NotificationDispatcher;
 import com.zoplanner.notification.service.NotificationService;
+import com.zoplanner.notification.service.WeeklyEventStore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -29,6 +33,9 @@ public class SqsEmailConsumer {
     private final NotificationService notificationService;
     private final ObjectMapper objectMapper;
     private final NewAssignmentNotificationHandler newAssignmentHandler;
+    private  NotificationDispatcher notificationDispatcher;
+    private  WeeklyEventStore weeklyEventStore;
+    private ScheduleUpdateConsumer updateConsumer;
 
     @Value("${aws.sqs.queue.url}")
     private String queueUrl;
@@ -50,11 +57,13 @@ public class SqsEmailConsumer {
     public SqsEmailConsumer(SqsClient sqsClient,
                             NotificationService notificationService,
                             ObjectMapper objectMapper,
-                            NewAssignmentNotificationHandler newAssignmentHandler) {
+                            NewAssignmentNotificationHandler newAssignmentHandler, ScheduleUpdateConsumer updateConsumer
+    ) {
         this.sqsClient = sqsClient;
         this.notificationService = notificationService;
         this.objectMapper = objectMapper;
         this.newAssignmentHandler = newAssignmentHandler;
+        this.updateConsumer = updateConsumer;
     }
 
     @Scheduled(fixedDelayString = "${notification.sqs.pollDelayMs:10000}")
@@ -92,6 +101,55 @@ public class SqsEmailConsumer {
     }
 
     void processMessage(Message message) {
+        try {
+            BaseEvent baseEvent =
+                    objectMapper.readValue(message.body(), BaseEvent.class);
+
+            log.debug("Processing message {} eventType={}",
+                    message.messageId(), baseEvent.eventType());
+
+            if (!StringUtils.hasText(baseEvent.eventType())) {
+                log.warn("❌ Saknar eventType – ignorerar message {}", message.messageId());
+                return;
+            }
+
+            NotificationDTO notificationDTO =
+                    objectMapper.readValue(message.body(), NotificationDTO.class);
+
+
+            switch (baseEvent.eventType()) {
+
+                case "NEW_ASSIGNMENT" -> {
+                    handleNewAssignment(message.body());
+                    deleteMessage(message);
+                }
+
+                case "LEGACY_EMAIL" -> {
+                    boolean processed = handleLegacyNotification(message);
+                    if (processed) {
+                        deleteMessage(message);
+                    }
+                }
+
+                case "SCHEDULE_UPDATED" -> {
+                    ScheduleUpdateEvent event =
+                            objectMapper.readValue(message.body(), ScheduleUpdateEvent.class);
+
+                    updateConsumer.handleMessage(event);
+
+                    deleteMessage(message);
+                }
+
+
+                default -> {
+                    log.warn("⚠️ Okänt eventType {}, ignorerar", baseEvent.eventType());
+
+                }
+            }
+
+        } catch (Exception e) {
+            log.error("Error processing message from SQS", e);
+        }
         try {
             BaseEvent baseEvent =
                     objectMapper.readValue(message.body(), BaseEvent.class);

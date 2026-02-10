@@ -30,7 +30,7 @@ public class MockEventTests {
     public void whenPublicMessage_thenMessageIsSentWithCorrectParameters(){
 
         //Arrange
-        String queueUrl = "https://sqs.us-east-1.amazonaws.com/123456789012/MyQueue"; // url from aws sqs
+        String queueUrl = "https://sqs.eu-north-1.amazonaws.com/084828590879/zoplanner-notification-queue";
         String messageBody = "Hello SQS";
         String expectedMessageId = "test-message-id-123";
 
