@@ -1,6 +1,8 @@
 package com.zoplanner.notification.sqs;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.zoplanner.notification.event.BaseEvent;
+import com.zoplanner.notification.event.ScheduleUpdateEvent;
 import com.zoplanner.notification.event.newassignment.NewAssignmentEvent;
 import com.zoplanner.notification.notification.NotificationPublisher;
 import lombok.extern.slf4j.Slf4j;
@@ -12,6 +14,7 @@ import software.amazon.awssdk.services.sqs.model.DeleteMessageRequest;
 import software.amazon.awssdk.services.sqs.model.Message;
 import software.amazon.awssdk.services.sqs.model.MessageSystemAttributeName;
 import software.amazon.awssdk.services.sqs.model.ReceiveMessageRequest;
+
 import java.util.List;
 import java.util.UUID;
 
@@ -48,10 +51,9 @@ public class SqsPoller {
     @Scheduled(fixedDelayString = "${aws.sqs.polling.delay.ms:5000}")
     public void poll() {
         if (!pollingEnabled) {
-            log.debug("SQS polling is disabled (aws.sqs.polling.enabled=false).");
+            log.debug("SQS polling disabled (aws.sqs.polling.enabled=false).");
             return;
         }
-
         if (queueUrl == null || queueUrl.isBlank()) {
             log.warn("SQS queue URL is empty (aws.sqs.queue.url=).");
             return;
@@ -76,31 +78,113 @@ public class SqsPoller {
     }
 
     private void handleMessage(Message message) {
-        try {
-            NewAssignmentEvent event = objectMapper.readValue(message.body(), NewAssignmentEvent.class);
-            log.info(
-                    "Received SQS messageId={} SentTs={} eventType={} eventId={}",
-                    message.messageId(),
-                    sentTimestamp(message),
-                    event.eventType(),
-                    safeEventId(event)
-            );
+        String rawBody = message.body();
 
-            if (event.eventType() == null || !event.eventType().equalsIgnoreCase("NEW_ASSIGNMENT")) {
-                log.warn("Ignoring messageId={} due to unsupported eventType={}", message.messageId(), event.eventType());
-                // deleteMessage(message); ta bort "//" om meddelande ska tas bort och inte felsökas
+        try {
+            // 0) Poison-skydd: om det inte ens är JSON -> delete direkt (undvik loop)
+            if (rawBody == null || !rawBody.trim().startsWith("{")) {
+                log.warn("Non-JSON message received. Deleting. messageId={} SentTs={}",
+                        message.messageId(), sentTimestamp(message));
+                deleteMessage(message);
                 return;
             }
 
-            // 1. Publish to SNS
-            notificationPublisher.publishNewAssignment(event);
+            // 1) Unwrap om det är SNS-envelope (Type/Message om Message innehåller JSON-string)
+            String payloadJson = unwrapIfSnsEnvelope(rawBody);
+            log.info("payloadJson(400)={}", payloadJson.substring(0, Math.min(400, payloadJson.length())));
 
-            // 2. Delete only if publish successfull
-            deleteMessage(message);
+            // 2) Läs enbart eventType
+            BaseEvent base = objectMapper.readValue(payloadJson, BaseEvent.class);
+            String eventType = base.eventType();
+
+            log.info("Received SQS messageId={} SentTs={} eventType={}",
+                    message.messageId(), sentTimestamp(message), eventType);
+
+            // 3) Saknar eventType -> delete (annars loopar det)
+            if (eventType == null || eventType.isBlank()) {
+                log.warn("Missing eventType. Deleting messageId={}", message.messageId());
+                deleteMessage(message);
+                return;
+            }
+
+            // 4) Route på eventType
+            switch (eventType.trim().toUpperCase()) {
+                case "NEW_ASSIGNMENT" -> {
+                    NewAssignmentEvent event = objectMapper.readValue(payloadJson, NewAssignmentEvent.class);
+
+                    log.info("Handling NEW_ASSIGNMENT messageId={} eventId={}",
+                            message.messageId(), safeEventId(event.eventId()));
+
+                    notificationPublisher.publishNewAssignment(event);
+                    deleteMessage(message);
+                }
+
+                case "SCHEDULE_UPDATED", "SCHEDULE_UPDATE" -> {
+                    // OBS: tillåt både SCHEDULE_UPDATED och SCHEDULE_UPDATE för kompatibilitet
+                    ScheduleUpdateEvent event = objectMapper.readValue(payloadJson, ScheduleUpdateEvent.class);
+
+                    log.info("Handling SCHEDULE_UPDATED messageId={} teacherId={} preference={}",
+                            message.messageId(),
+                            safe(event.getTeacherId()),
+                            event.getPreference() != null ? event.getPreference().name() : "-");
+
+                    notificationPublisher.publishScheduleUpdate(event);
+                    deleteMessage(message);
+                }
+
+                default -> {
+                    // Okänd / ej stödd -> delete för att undvika retry-loop
+                    log.warn("Unsupported eventType='{}'. Deleting messageId={}", eventType, message.messageId());
+                    deleteMessage(message);
+                }
+            }
 
         } catch (Exception e) {
-            log.error("Failed processing SQS messageId={} (will retry later). Body={}", message.messageId(), message.body(), e);
+            // Viktigt: Om det är parse-problem (formatfel) vill vi INTE loopa -> delete
+            // Om du vill vara mer “snäll” kan du differentiera på exception-typ.
+            log.error("Failed processing SQS messageId={} (deleting to avoid retry loop). Body={}",
+                    message.messageId(), rawBody, e);
+            deleteMessage(message);
         }
+    }
+
+    /**
+     * If body is an SNS envelope, return the inner Message JSON.
+     * Otherwise return body as-is.
+     */
+    private String unwrapIfSnsEnvelope(String body) {
+        try {
+            // SNS envelope har ofta "Type" och "Message"
+            if (body != null && body.contains("\"Type\"") && body.contains("\"Message\"")) {
+
+                SnsEnvelope env = objectMapper.readValue(body, SnsEnvelope.class);
+
+                if (env != null && env.message() != null) {
+                    String msg = env.message().trim();
+
+                    // Case 1: Message är redan en JSON-object string: { ... }
+                    if (msg.startsWith("{")) {
+                        return msg;
+                    }
+
+                    // Case 2: Message är en JSON-string som innehåller JSON (escaped)
+                    // Ex: "{\"eventType\":\"SCHEDULE_UPDATED\",\"teacherId\":\"teacher-3\"}"
+                    if (msg.startsWith("\"") && msg.endsWith("\"")) {
+                        String unescaped = objectMapper.readValue(msg, String.class);
+                        if (unescaped != null && unescaped.trim().startsWith("{")) {
+                            return unescaped;
+                        }
+                    }
+
+                    // Case 3: Message är inte JSON (t.ex. confirmation / annat) -> returnera som-is
+                    return msg;
+                }
+            }
+        } catch (Exception ignored) {
+            // Inte ett SNS-envelope, behandla som vanlig JSON
+        }
+
+        return body;
     }
 
     private void deleteMessage(Message message) {
@@ -108,13 +192,7 @@ public class SqsPoller {
                 .queueUrl(queueUrl)
                 .receiptHandle(message.receiptHandle())
                 .build());
-
         log.debug("Deleted SQS messageId={}", message.messageId());
-    }
-
-    private String safeEventId(NewAssignmentEvent event) {
-        UUID id = event.eventId();
-        return id != null ? id.toString() : "null";
     }
 
     private String sentTimestamp(Message message) {
@@ -122,6 +200,11 @@ public class SqsPoller {
                 .getOrDefault(MessageSystemAttributeName.SENT_TIMESTAMP.toString(), "unknown");
     }
 
+    private String safeEventId(UUID id) {
+        return id != null ? id.toString() : "null";
+    }
 
-
+    private String safe(String s) {
+        return (s == null || s.isBlank()) ? "-" : s;
+    }
 }
