@@ -87,6 +87,8 @@ public class ScheduleUpdateEvent {
         this.preference = preference;
     }
 
+    public void setMessage(String message) { this.message = message;}
+
     public String getMessage() {
         return message;
     }

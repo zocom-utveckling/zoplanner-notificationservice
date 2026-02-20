@@ -24,7 +24,7 @@ import software.amazon.awssdk.services.sqs.model.ReceiveMessageRequest;
 
 import java.util.List;
 
-@Component
+// @Component
 public class SqsEmailConsumer {
 
     private static final Logger log = LoggerFactory.getLogger(SqsEmailConsumer.class);
@@ -40,7 +40,7 @@ public class SqsEmailConsumer {
     @Value("${aws.sqs.queue.url}")
     private String queueUrl;
 
-    @Value("${notification.sqs.enabled:true}")
+    @Value("${notification.sqs.enabled:false}")
     private boolean pollingEnabled;
 
     /**
