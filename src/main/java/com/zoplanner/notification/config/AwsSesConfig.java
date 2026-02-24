@@ -9,18 +9,10 @@ import software.amazon.awssdk.services.ses.SesClient;
 @Configuration
 public class AwsSesConfig {
 
-    /**
-     * Region for SES. We give it a sensible default so tests don't fail
-     * when aws.region isn't provided in application-test properties.
-     */
-    @Value("${aws.region:eu-north-1}")
-
-    private String region;
-
     @Bean
-    public SesClient sesClient() {
+    public SesClient sesClient(@Value("${aws.region:eu-north-1}") String region) {
         return SesClient.builder()
-                .region(Region.of(region))
+                .region(software.amazon.awssdk.regions.Region.of(region))
                 .build();
     }
 }
