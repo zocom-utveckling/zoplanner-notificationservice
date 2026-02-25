@@ -1,6 +1,5 @@
 package com.zoplanner.notification.service;
 
-import com.zoplanner.notification.dto.NotificationDTO;
 import com.zoplanner.notification.event.ScheduleUpdateEvent;
 import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Service;
@@ -8,7 +7,6 @@ import software.amazon.awssdk.services.sns.SnsClient;
 import software.amazon.awssdk.services.sns.model.MessageAttributeValue;
 import software.amazon.awssdk.services.sns.model.PublishRequest;
 import software.amazon.awssdk.services.sns.model.SubscribeRequest;
-
 
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
@@ -23,19 +21,16 @@ public class SnsNotificationDispatcher extends NotificationDispatcher {
     private final SnsClient snsClient;
     private final String topicArn = "arn:aws:sns:eu-north-1:084828590879:Zoplanner";
 
-
-
-    public SnsNotificationDispatcher( SnsClient snsClient ) {
+    public SnsNotificationDispatcher(SnsClient snsClient) {
         this.snsClient = snsClient;
     }
-
-
 
     @Override
     public void send24hReminder(ScheduleUpdateEvent event) {
 
         ZonedDateTime swedishTime =
                 event.getEventTime().atZone(ZoneId.of("Europe/Stockholm"));
+
         snsClient.publish(PublishRequest.builder()
                 .topicArn(topicArn)
                 .subject("Jobb påminnelse")
@@ -55,33 +50,31 @@ public class SnsNotificationDispatcher extends NotificationDispatcher {
 
         if (events.isEmpty()) {
             message.append("Inga schemalagda jobb denna vecka.");
-            return;
+        } else {
+            message.append("Du har ")
+                    .append(events.size())
+                    .append(" jobb schemalagda:\n\n");
+
+            for (ScheduleUpdateEvent event : events) {
+
+                String when = event.getEventTime()
+                        .atZone(ZoneId.of("Europe/Stockholm"))
+                        .format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"));
+
+                String what =
+                        event.getMessage() != null && !event.getMessage().isBlank()
+                                ? event.getMessage()
+                                : "Schemalagt jobb";
+
+                message.append("- ")
+                        .append(when)
+                        .append(" – ")
+                        .append(what)
+                        .append("\n");
+            }
         }
 
-        message.append("Du har ")
-                .append(events.size())
-                .append(" jobb schemalagda:\n\n");
-
-        for (ScheduleUpdateEvent event : events) {
-
-            String when = event.getEventTime()
-                    .atZone(ZoneId.of("Europe/Stockholm"))
-                    .format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"));
-
-            String what =
-                    event.getMessage() != null && !event.getMessage().isBlank()
-                            ? event.getMessage()
-                            : "Schemalagt jobb";
-
-
-            message.append("- ")
-                    .append(when)
-                    .append(" – ")
-                    .append(what)
-                    .append("\n");
-        }
-
-
+        // ✅ publish ALLTID (även när listan är tom)
         snsClient.publish(PublishRequest.builder()
                 .topicArn(topicArn)
                 .subject("Veckoschema")
@@ -94,7 +87,6 @@ public class SnsNotificationDispatcher extends NotificationDispatcher {
                 ))
                 .build());
     }
-
 
     public void subscribeEmail(String email, String teacherId) {
 
@@ -113,6 +105,4 @@ public class SnsNotificationDispatcher extends NotificationDispatcher {
                 ))
                 .build());
     }
-
-
 }

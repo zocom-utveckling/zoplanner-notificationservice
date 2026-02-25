@@ -7,10 +7,7 @@ import com.zoplanner.notification.event.BaseEvent;
 import com.zoplanner.notification.event.ScheduleUpdateEvent;
 import com.zoplanner.notification.event.newassignment.NewAssignmentEvent;
 import com.zoplanner.notification.handler.NewAssignmentNotificationHandler;
-import com.zoplanner.notification.model.NotificationPreference;
-import com.zoplanner.notification.service.NotificationDispatcher;
 import com.zoplanner.notification.service.NotificationService;
-import com.zoplanner.notification.service.WeeklyEventStore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -19,12 +16,13 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 import software.amazon.awssdk.services.sqs.SqsClient;
 import software.amazon.awssdk.services.sqs.model.DeleteMessageRequest;
+import software.amazon.awssdk.services.sqs.model.DeleteMessageResponse;
 import software.amazon.awssdk.services.sqs.model.Message;
 import software.amazon.awssdk.services.sqs.model.ReceiveMessageRequest;
 
 import java.util.List;
 
-// @Component
+@Component
 public class SqsEmailConsumer {
 
     private static final Logger log = LoggerFactory.getLogger(SqsEmailConsumer.class);
@@ -33,32 +31,23 @@ public class SqsEmailConsumer {
     private final NotificationService notificationService;
     private final ObjectMapper objectMapper;
     private final NewAssignmentNotificationHandler newAssignmentHandler;
-    private  NotificationDispatcher notificationDispatcher;
-    private  WeeklyEventStore weeklyEventStore;
-    private ScheduleUpdateConsumer updateConsumer;
+    private final ScheduleUpdateConsumer updateConsumer;
 
-    @Value("${aws.sqs.queue.url}")
+    @Value("${aws.sqs.queue.url:}")
     private String queueUrl;
 
     @Value("${notification.sqs.enabled:false}")
     private boolean pollingEnabled;
 
-    /**
-     * Tests override this via ReflectionTestUtils.setField(consumer, "maxMessages", ...)
-     */
     private int maxMessages = 10;
-
-    /**
-     * Tests override this via ReflectionTestUtils.setField(consumer, "waitTimeSeconds", ...)
-     */
     private int waitTimeSeconds = 10;
 
-    // Order matches tests: (SqsClient, NotificationService, ObjectMapper)
+    // ✅ Constructor-signatur som dina tester använder:
     public SqsEmailConsumer(SqsClient sqsClient,
                             NotificationService notificationService,
                             ObjectMapper objectMapper,
-                            NewAssignmentNotificationHandler newAssignmentHandler, ScheduleUpdateConsumer updateConsumer
-    ) {
+                            NewAssignmentNotificationHandler newAssignmentHandler,
+                            ScheduleUpdateConsumer updateConsumer) {
         this.sqsClient = sqsClient;
         this.notificationService = notificationService;
         this.objectMapper = objectMapper;
@@ -96,142 +85,93 @@ public class SqsEmailConsumer {
                 processMessage(message);
             }
         } catch (Exception e) {
+            // Test vill att vi inte kastar här
             log.error("Error polling messages from SQS", e);
         }
     }
 
     void processMessage(Message message) {
         try {
-            BaseEvent baseEvent =
-                    objectMapper.readValue(message.body(), BaseEvent.class);
+            String body = message.body();
 
-            log.debug("Processing message {} eventType={}",
-                    message.messageId(), baseEvent.eventType());
+            // Först: försök läsa eventType (om det finns)
+            BaseEvent baseEvent = objectMapper.readValue(body, BaseEvent.class);
+            String eventType = baseEvent.eventType();
 
-            if (!StringUtils.hasText(baseEvent.eventType())) {
-                log.warn("❌ Saknar eventType – ignorerar message {}", message.messageId());
+            // ✅ Legacy: saknar eventType -> tolka som NotificationDTO och skapa notification
+            if (!StringUtils.hasText(eventType)) {
+                handleLegacyNotificationAndMaybeDelete(message);
                 return;
             }
 
-            NotificationDTO notificationDTO =
-                    objectMapper.readValue(message.body(), NotificationDTO.class);
-
-
-            switch (baseEvent.eventType()) {
-
+            switch (eventType) {
                 case "NEW_ASSIGNMENT" -> {
-                    handleNewAssignment(message.body());
-                    deleteMessage(message);
-                }
+                    NewAssignmentEvent event = objectMapper.readValue(body, NewAssignmentEvent.class);
+                    log.info("Handling NEW_ASSIGNMENT event for teacherEmail {}", event.teacherEmail());
 
-                case "LEGACY_EMAIL" -> {
-                    boolean processed = handleLegacyNotification(message);
-                    if (processed) {
-                        deleteMessage(message);
-                    }
+                    // Om handler kastar -> outer catch -> delete INTE (som test kräver)
+                    newAssignmentHandler.handle(event);
+
+                    deleteMessage(message);
                 }
 
                 case "SCHEDULE_UPDATED" -> {
-                    ScheduleUpdateEvent event =
-                            objectMapper.readValue(message.body(), ScheduleUpdateEvent.class);
-
-                    updateConsumer.handleMessage(event);
-
-                    deleteMessage(message);
-                }
-
-
-                default -> {
-                    log.warn("⚠️ Okänt eventType {}, ignorerar", baseEvent.eventType());
-
-                }
-            }
-
-        } catch (Exception e) {
-            log.error("Error processing message from SQS", e);
-        }
-        try {
-            BaseEvent baseEvent =
-                    objectMapper.readValue(message.body(), BaseEvent.class);
-
-            log.debug("Processing SQS messageId {} with eventType {}",
-                    message.messageId(),
-                    baseEvent.eventType());
-
-            if (!StringUtils.hasText(baseEvent.eventType())) {
-                log.debug("Missing eventType for message {}, treating as legacy notification",
-                        message.messageId());
-                boolean processed = handleLegacyNotification(message);
-                if (processed) {
-                    deleteMessage(message);
-                }
-                return;
-            }
-
-            switch (baseEvent.eventType()) {
-                case "NEW_ASSIGNMENT" -> handleNewAssignment(message.body());
-                default -> {
-                    boolean processed = handleLegacyNotification(message);
-                    if (processed) {
-                        deleteMessage(message);
+                    if (updateConsumer != null) {
+                        ScheduleUpdateEvent event = objectMapper.readValue(body, ScheduleUpdateEvent.class);
+                        updateConsumer.handleMessage(event);
                     }
-                    return;
+                    deleteMessage(message);
+                }
+
+                default -> {
+                    // Default: behandla som legacy NotificationDTO
+                    handleLegacyNotificationAndMaybeDelete(message);
                 }
             }
 
-            deleteMessage(message);
-
         } catch (Exception e) {
+            // Vid fel ska vi INTE delete:a (tester förväntar sig det)
             log.error("Error processing message from SQS", e);
         }
     }
 
+    private void handleLegacyNotificationAndMaybeDelete(Message message) throws JsonProcessingException {
+        NotificationDTO dto = objectMapper.readValue(message.body(), NotificationDTO.class);
+
+        // Test: Missing recipient -> inga calls + ingen delete
+        if (!StringUtils.hasText(dto.getRecipient())) {
+            log.warn("Skipping message with missing recipient: {}", message.messageId());
+            return;
+        }
+
+        // Test: kräver att vi inte skapar notification om både message + emailBody saknas
+        boolean hasTextMessage = StringUtils.hasText(dto.getMessage());
+        boolean hasEmailBody = StringUtils.hasText(dto.getEmailBody());
+
+        if (!hasTextMessage && !hasEmailBody) {
+            log.warn("Skipping message with missing message/email body: {}", message.messageId());
+            return;
+        }
+
+        // Test: vill att createNotification kallas (och om den kastar -> ingen delete)
+        notificationService.createNotification(dto);
+
+        deleteMessage(message);
+    }
+
     void deleteMessage(Message message) {
         try {
-            DeleteMessageRequest delete = DeleteMessageRequest.builder()
+            DeleteMessageResponse resp = sqsClient.deleteMessage(DeleteMessageRequest.builder()
                     .queueUrl(queueUrl)
                     .receiptHandle(message.receiptHandle())
-                    .build();
-            sqsClient.deleteMessage(delete);
+                    .build());
             log.debug("Deleted SQS message {}", message.messageId());
         } catch (Exception e) {
             log.error("Failed to delete SQS message {}", message.messageId(), e);
         }
     }
 
-    private boolean handleLegacyNotification(Message message) throws JsonProcessingException {
-        NotificationDTO dto =
-                objectMapper.readValue(message.body(),
-                        NotificationDTO.class);
-
-        if (!StringUtils.hasText(dto.getRecipient())) {
-            log.warn("Skipping message with missing recipient: {}", message.messageId());
-            return false;
-        }
-
-        if (!StringUtils.hasText(dto.getMessage()) && !StringUtils.hasText(dto.getEmailBody())) {
-            log.warn("Skipping message with missing message/email body: {}", message.messageId());
-            return false;
-        }
-
-        log.debug("Handling legacy notification for recipient {}",
-                dto.getRecipient());
-
-        notificationService.createNotification(dto);
-        return true;
-    }
-
-    private void handleNewAssignment(String messageBody) throws JsonProcessingException {
-        NewAssignmentEvent event = objectMapper.readValue(messageBody,
-                NewAssignmentEvent.class);
-
-        log.info("Handling NEW_ASSIGNMENT event for teacherEmail {}",
-                event.teacherEmail());
-
-        newAssignmentHandler.handle(event);
-    }
-
-    // setters for tests (in addition to ReflectionTestUtils)
+    // setters (för tester / debug)
     public void setQueueUrl(String queueUrl) {
         this.queueUrl = queueUrl;
     }

@@ -5,7 +5,8 @@ import com.zoplanner.notification.event.BaseEvent;
 import com.zoplanner.notification.event.ScheduleUpdateEvent;
 import com.zoplanner.notification.event.newassignment.NewAssignmentEvent;
 import com.zoplanner.notification.notification.NotificationPublisher;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
@@ -18,9 +19,10 @@ import software.amazon.awssdk.services.sqs.model.ReceiveMessageRequest;
 import java.util.List;
 import java.util.UUID;
 
-@Slf4j
 @Component
 public class SqsPoller {
+
+    private static final Logger log = LoggerFactory.getLogger(SqsPoller.class);
 
     private final SqsClient sqsClient;
     private final ObjectMapper objectMapper;
@@ -141,7 +143,6 @@ public class SqsPoller {
 
         } catch (Exception e) {
             // Viktigt: Om det är parse-problem (formatfel) vill vi INTE loopa -> delete
-            // Om du vill vara mer “snäll” kan du differentiera på exception-typ.
             log.error("Failed processing SQS messageId={} (deleting to avoid retry loop). Body={}",
                     message.messageId(), rawBody, e);
             deleteMessage(message);

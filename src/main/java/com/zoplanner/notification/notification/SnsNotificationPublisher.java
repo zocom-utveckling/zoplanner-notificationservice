@@ -1,11 +1,11 @@
 package com.zoplanner.notification.notification;
 
-
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.zoplanner.notification.event.ScheduleUpdateEvent;
 import com.zoplanner.notification.event.newassignment.NewAssignmentEvent;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.MessageSource;
 import org.springframework.stereotype.Component;
@@ -13,11 +13,13 @@ import software.amazon.awssdk.services.sns.SnsClient;
 import software.amazon.awssdk.services.sns.model.MessageAttributeValue;
 import software.amazon.awssdk.services.sns.model.PublishRequest;
 import software.amazon.awssdk.services.sns.model.PublishResponse;
+
 import java.util.Map;
 
-@Slf4j
 @Component
 public class SnsNotificationPublisher implements NotificationPublisher {
+
+    private static final Logger log = LoggerFactory.getLogger(SnsNotificationPublisher.class);
 
     private final SnsClient snsClient;
     private final ObjectMapper objectMapper;
@@ -66,10 +68,11 @@ public class SnsNotificationPublisher implements NotificationPublisher {
                 .build();
 
         PublishResponse response = snsClient.publish(request);
-        log.info("Published NEW_ASSIGNMENT to SNS email topic. messageId={} topicArn={}", response.messageId(), emailTopicArn);
+        log.info("Published NEW_ASSIGNMENT to SNS email topic. messageId={} topicArn={}",
+                response.messageId(), emailTopicArn);
 
-        // Optional: if you also want the machine event on the events topic, uncomment:
-        // publishEventJson(eventsTopicArn, "NEW_ASSIGNMENT", event, attrs);
+        // Optional: om ni vill även pusha maskin-event till events-topic:
+        // publishEventJson("NEW_ASSIGNMENT", event, attrs);
     }
 
     @Override
@@ -108,10 +111,11 @@ public class SnsNotificationPublisher implements NotificationPublisher {
                 .build();
 
         PublishResponse response = snsClient.publish(request);
-        log.info("Published {} to SNS email topic. messageId={} topicArn={}", eventType, response.messageId(), emailTopicArn);
+        log.info("Published {} to SNS email topic. messageId={} topicArn={}",
+                eventType, response.messageId(), emailTopicArn);
 
-        // Optional: if you also want the machine event on the events topic, uncomment:
-        // publishEventJson(eventsTopicArn, eventType, event, attrs);
+        // Optional: om ni vill även pusha maskin-event till events-topic:
+        // publishEventJson(eventType, event, attrs);
     }
 
     @SuppressWarnings("unused")
@@ -128,7 +132,8 @@ public class SnsNotificationPublisher implements NotificationPublisher {
                 .build();
 
         PublishResponse response = snsClient.publish(request);
-        log.info("Published {} to SNS events topic. messageId={} topicArn={}", subject, response.messageId(), eventsTopicArn);
+        log.info("Published {} to SNS events topic. messageId={} topicArn={}",
+                subject, response.messageId(), eventsTopicArn);
     }
 
     private void requireEmailTopicArn() {
@@ -142,8 +147,6 @@ public class SnsNotificationPublisher implements NotificationPublisher {
             throw new IllegalStateException("Events Topic ARN is empty. Check aws.sns.topic.events or SNS_TOPIC_EVENTS_ARN.");
         }
     }
-
-
 
     private String buildEmailMessage(NewAssignmentEvent e) {
         return """
@@ -182,7 +185,6 @@ public class SnsNotificationPublisher implements NotificationPublisher {
                 Integer.toString(changeCount),
                 safe(e.getMessage())
         );
-
     }
 
     private String safe(String s) {
