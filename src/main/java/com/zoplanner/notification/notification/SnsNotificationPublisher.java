@@ -41,6 +41,9 @@ public class SnsNotificationPublisher implements NotificationPublisher {
         this.emailTopicArn = emailTopicArn;
         this.eventsTopicArn = eventsTopicArn;
         this.messageSource = messageSource;
+
+        log.info("SNSNotificationPublisher initialized (emailTopicArn={}, eventsTopicArn={}).",
+                emailTopicArn, eventsTopicArn);
     }
 
     @Override

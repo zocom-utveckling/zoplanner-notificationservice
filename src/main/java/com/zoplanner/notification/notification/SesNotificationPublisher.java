@@ -12,7 +12,7 @@ import software.amazon.awssdk.services.ses.model.*;
 
 @Slf4j
 @Component
-@ConditionalOnProperty(name = "notification.publisher", havingValue = "ses")
+@ConditionalOnProperty(name = "notification.publisher", havingValue = "ses") // Används endast om properties är inställda för SES
 public class SesNotificationPublisher implements NotificationPublisher {
 
     private final SesClient sesClient;
@@ -32,13 +32,18 @@ public class SesNotificationPublisher implements NotificationPublisher {
         this.fromEmail = fromEmail;
         this.fromName = fromName;
         this.messageSource = messageSource;
+
+        // Log för att visa att SES startat
+        log.info("SesNotificationPublisher initialized (fromEmail={}, fromName={})",
+                fromEmail, fromName);
     }
 
+    // Skickar ett mail för NEW_ASSIGNMENT
     @Override
     public void publishNewAssignment(NewAssignmentEvent event) {
         requireFromEmail();
 
-        String recipient = safe(event.teacherEmail());
+        String recipient = safe(event.teacherEmail()); // Hämta mottagar mail, kontroll att det inte är null, om det saknas, logga och avbryt.
         if (recipient.equals("-")) {
             log.warn("Missing teacherEmail on NEW_ASSIGNMENT event. Not publishing to SES. event={}", event);
             return;
@@ -51,11 +56,13 @@ public class SesNotificationPublisher implements NotificationPublisher {
         log.info("Sent NEW_ASSIGNMENT email via SES, messageId={} to={} from={}", response.messageId(), recipient, fromEmail);
     }
 
+
+    // Skickar ett mail för SCHEDULE_UPDATED
     @Override
     public void publishScheduleUpdate(ScheduleUpdateEvent event) {
         requireFromEmail();
 
-        String recipient = safe(event.getTeacherEmail());
+        String recipient = safe(event.getTeacherEmail()); // Hämta mottagar mail, om det saknas logga och avbryt
         if (recipient.equals("-")) {
             log.warn("Missing teacherEmail on SCHEDULE_UPDATED event. Not publishing to SES. event={}", event);
             return;
@@ -68,6 +75,7 @@ public class SesNotificationPublisher implements NotificationPublisher {
         log.info("Sent SCHEDULE_UPDATED email via SES, messageId={} to={} from={}", response.messageId(), recipient, fromEmail);
     }
 
+    // Metod för att ta emot text-email från  AWS SES
     private SendEmailResponse sendTextEmail(String to, String subject, String textBody) {
         try {
             SendEmailRequest request = SendEmailRequest.builder()
@@ -90,17 +98,20 @@ public class SesNotificationPublisher implements NotificationPublisher {
         }
     }
 
+    // För att säkerställa att från mail finns.
     private void requireFromEmail() {
         if (fromEmail == null || fromEmail.isBlank()) {
             throw new IllegalStateException("SES from email is empty. Check aws.ses.from.email or AWS_SES_FROM_EMAIL.");
         }
     }
 
+    // Formaterar avsändare som Name
     private String formatFrom(String name, String email) {
         if (name == null || name.isBlank()) return email;
         return String.format("%s <%s>", name, email);
     }
 
+    // Bygger texten i mailet för NEW_ASSIGNMENT (Ska ändras till HTML template)
     private String buildEmailMessage(NewAssignmentEvent e) {
         return """
                 Du har fått en ny uppgift:
@@ -115,6 +126,7 @@ public class SesNotificationPublisher implements NotificationPublisher {
         );
     }
 
+    // Bygger texten i mailet för SCHEDULE_UPDATED (ska ändras till HTML template)
     private String buildEmailMessage(ScheduleUpdateEvent e) {
         int changeCount = (e.getChanges() == null) ? 0 : e.getChanges().size();
         return """
