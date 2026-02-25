@@ -27,7 +27,6 @@ public class FileEntity {
     @Column(name = "size", nullable = false)
     private Long size;
 
-    @Lob
     @Column(name = "data", nullable = false, columnDefinition = "BYTEA")
     private byte[] data;
 
