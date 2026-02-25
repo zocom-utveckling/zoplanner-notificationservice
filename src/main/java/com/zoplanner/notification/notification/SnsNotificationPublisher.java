@@ -7,6 +7,7 @@ import com.zoplanner.notification.event.ScheduleUpdateEvent;
 import com.zoplanner.notification.event.newassignment.NewAssignmentEvent;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.MessageSource;
 import org.springframework.stereotype.Component;
 import software.amazon.awssdk.services.sns.SnsClient;
@@ -17,6 +18,7 @@ import java.util.Map;
 
 @Slf4j
 @Component
+@ConditionalOnProperty(name = "notification.publisher", havingValue = "sns", matchIfMissing = true)
 public class SnsNotificationPublisher implements NotificationPublisher {
 
     private final SnsClient snsClient;
@@ -39,6 +41,9 @@ public class SnsNotificationPublisher implements NotificationPublisher {
         this.emailTopicArn = emailTopicArn;
         this.eventsTopicArn = eventsTopicArn;
         this.messageSource = messageSource;
+
+        log.info("SNSNotificationPublisher initialized (emailTopicArn={}, eventsTopicArn={}).",
+                emailTopicArn, eventsTopicArn);
     }
 
     @Override
