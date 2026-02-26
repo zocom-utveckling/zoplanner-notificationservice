@@ -1,5 +1,6 @@
 package com.zoplanner.notification.event;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.zoplanner.notification.model.NotificationPreference;
 
@@ -10,13 +11,21 @@ import java.util.List;
 
 public class ScheduleUpdateEvent {
 
+    @JsonAlias({"teacherId","TeacherId"})
     private String teacherId;
+    @JsonAlias({"teacherEmail","TeacherEmail"})
     private String teacherEmail;
+    @JsonAlias({"source","Source"})
     private String source;
+    @JsonAlias({"eventTime","EventTime"})
     private Instant eventTime;
+    @JsonAlias({"createdAt","CreatedAt"})
     private LocalDateTime createdAt;
+    @JsonAlias({"changes","Changes"})
     private List<ScheduleChange> changes;
+    @JsonAlias({"preference","Preference"})
     private NotificationPreference preference;
+    @JsonAlias({"message","Message"})
     private String message;
 
     public ScheduleUpdateEvent() {
@@ -109,9 +118,13 @@ public class ScheduleUpdateEvent {
     // Nested klass för förändringar i schemat
     public static class ScheduleChange {
 
+        @JsonAlias({"lessonId","LessonId"})
         private String lessonId;
+        @JsonAlias({"changeType","ChangeType"})
         private String changeType; // t.ex. TIME_UPDATED, CANCELED
+        @JsonAlias({"oldValue","OldValue"})
         private String oldValue;
+        @JsonAlias({"newValue","NewValue"})
         private String newValue;
 
         public ScheduleChange() {
