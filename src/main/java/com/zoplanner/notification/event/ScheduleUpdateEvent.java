@@ -115,7 +115,7 @@ public class ScheduleUpdateEvent {
                 '}';
     }
 
-    // Nested klass för förändringar i schemat
+    // Nested klass för förändringar i schemat.
     public static class ScheduleChange {
 
         @JsonAlias({"lessonId","LessonId"})
