@@ -6,6 +6,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import com.zoplanner.notification.dto.BroadcastNotificationDTO;
 
 @RestController
 @RequestMapping("/api/notifications")
@@ -61,6 +62,22 @@ public class NotificationController {
             return ResponseEntity.ok().build();
         } catch (Exception e) {
             log.error("Error sending assignment deleted notification", e);
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+
+    // new issue111
+    @PostMapping("/broadcast")
+    public ResponseEntity<Void> broadcast(@RequestBody BroadcastNotificationDTO dto) {
+        log.info("Request to send broadcast notification received");
+        log.debug("DTO: {}", dto);
+
+        try {
+            notificationService.broadcastNotification(dto);
+            log.info("Broadcast notification sent successfully");
+            return ResponseEntity.ok().build();
+        } catch (Exception e) {
+            log.error("Error sending broadcast notification", e);
             return ResponseEntity.internalServerError().build();
         }
     }

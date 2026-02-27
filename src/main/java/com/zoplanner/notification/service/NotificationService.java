@@ -7,6 +7,7 @@ import com.zoplanner.notification.repository.NotificationRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import com.zoplanner.notification.dto.BroadcastNotificationDTO;
 
 @Service
 public class NotificationService {
@@ -172,4 +173,50 @@ public class NotificationService {
         }
     }
 
+    // new issue111
+    public void broadcastNotification(BroadcastNotificationDTO dto) {
+        log.info("Sending broadcast notification");
+        log.debug("DTO data: {}", dto);
+
+        try {
+            // loop all recipients and send the same message
+            for (String email : dto.getRecipientEmails()) {
+
+                // save to repository
+                Notification notification = new Notification(dto.getMessage(), email);
+                notificationRepository.save(notification);
+
+                // send email
+                log.info("Sending broadcast email to {}", email);
+                emailService.sendEmail(email, dto.getSubject(), dto.getMessage());
+
+                // audit log on success for each recipient
+                notificationAuditLogger.logNotificationSent(
+                        email,
+                        dto.getChannel() != null ? dto.getChannel() : "EMAIL",
+                        "BROADCAST",
+                        true
+                );
+            }
+
+        } catch (Exception e) {
+            log.error("Error sending broadcast notification", e);
+            try {
+                if (dto.getRecipientEmails() != null) {
+                    for (String email : dto.getRecipientEmails()) {
+                        notificationAuditLogger.logNotificationSent(
+                                email,
+                                dto.getChannel() != null ? dto.getChannel() : "EMAIL",
+                                "BROADCAST",
+                                false
+                        );
+                    }
+                }
+            } catch (Exception auditException) {
+                log.error("Failed to write audit log after failure", auditException);
+            }
+
+            throw e;
+        }
+    }
 }
