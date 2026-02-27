@@ -6,10 +6,10 @@ import org.springframework.context.annotation.Configuration;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.regions.Region;
-import software.amazon.awssdk.services.sqs.SqsClient;
+import software.amazon.awssdk.services.sns.SnsClient;
 
 @Configuration
-public class AwsSqsConfig {
+public class AwsSnsConfig {
 
     @Value("${aws.region:eu-north-1}")
     private String region;
@@ -20,9 +20,10 @@ public class AwsSqsConfig {
     @Value("${aws.secretAccessKey}")
     private String secretAccessKey;
 
+
     @Bean
-    public SqsClient sqsClient() {
-        return SqsClient.builder()
+    public SnsClient snsClient() {
+        return SnsClient.builder()
                 .region(Region.of(region))
                 .credentialsProvider(
                         StaticCredentialsProvider.create(
@@ -31,4 +32,5 @@ public class AwsSqsConfig {
                 )
                 .build();
     }
+
 }

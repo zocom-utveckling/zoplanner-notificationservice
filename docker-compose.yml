@@ -1,0 +1,13 @@
+version: "3.9"
+
+services:
+  notification-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: notification-service
+    ports:
+      - "${SERVER_PORT}:8082"
+    env_file:
+      - .env
+    restart: unless-stopped
