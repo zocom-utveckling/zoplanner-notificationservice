@@ -2,6 +2,7 @@ package com.zoplanner.notification.notification;
 
 import com.zoplanner.notification.event.ScheduleUpdateEvent;
 import com.zoplanner.notification.event.newassignment.NewAssignmentEvent;
+import com.zoplanner.notification.notification.email.EmailTemplateService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -9,6 +10,7 @@ import org.springframework.context.MessageSource;
 import org.springframework.stereotype.Component;
 import software.amazon.awssdk.services.ses.SesClient;
 import software.amazon.awssdk.services.ses.model.*;
+import java.util.List;
 
 @Slf4j
 @Component
@@ -18,6 +20,7 @@ public class SesNotificationPublisher implements NotificationPublisher {
     private final SesClient sesClient;
     private final String fromEmail;
     private final String fromName;
+    private final EmailTemplateService templateService;
 
     @SuppressWarnings("unused")
     private final MessageSource messageSource;
@@ -26,12 +29,14 @@ public class SesNotificationPublisher implements NotificationPublisher {
             SesClient sesClient,
             @Value("${aws.ses.from.email}") String fromEmail,
             @Value("${aws.ses.from.name:}") String fromName,
-            MessageSource messageSource
+            MessageSource messageSource,
+            EmailTemplateService templateService
     ) {
         this.sesClient = sesClient;
         this.fromEmail = fromEmail;
         this.fromName = fromName;
         this.messageSource = messageSource;
+        this.templateService = templateService;
 
         // Log för att visa att SES startat
         log.info("SesNotificationPublisher initialized (fromEmail={}, fromName={})",
@@ -50,15 +55,16 @@ public class SesNotificationPublisher implements NotificationPublisher {
         }
 
         String subject = "NEW_ASSIGNMENT";
-        String body = buildEmailMessage(event);
+        String htmlBody = templateService.renderNewAssignmentHtml(event);
+        String textBody = templateService.renderNewAssignmentText(event);
 
-        SendEmailResponse response = sendTextEmail(recipient, subject, body);
+        SendEmailResponse response = sendEmail(recipient, subject, htmlBody, textBody);
         log.info("Sent NEW_ASSIGNMENT email via SES, messageId={} to={} from={}", response.messageId(), recipient, fromEmail);
     }
 
 
     // Skickar ett mail för SCHEDULE_UPDATED
-    @Override
+    /* @Override
     public void publishScheduleUpdate(ScheduleUpdateEvent event) {
         requireFromEmail();
 
@@ -73,29 +79,38 @@ public class SesNotificationPublisher implements NotificationPublisher {
 
         SendEmailResponse response = sendTextEmail(recipient, subject, body);
         log.info("Sent SCHEDULE_UPDATED email via SES, messageId={} to={} from={}", response.messageId(), recipient, fromEmail);
-    }
+    } */
 
     // Metod för att ta emot text-email från  AWS SES
-    private SendEmailResponse sendTextEmail(String to, String subject, String textBody) {
-        try {
-            SendEmailRequest request = SendEmailRequest.builder()
-                    .source(formatFrom(fromName, fromEmail))
-                    .destination(Destination.builder().toAddresses(to).build())
-                    .message(Message.builder()
-                            .subject(Content.builder().data(subject).charset("UTF-8").build())
-                            .body(Body.builder()
-                                    .text(Content.builder().data(textBody).charset("UTF-8").build())
-                                    .build())
-                            .build())
-                    .build();
-
-            return sesClient.sendEmail(request);
-
-        } catch (SesException e) {
-            String awsMessage = e.awsErrorDetails() != null ? e.awsErrorDetails().errorMessage() : e.getMessage();
-            log.error("Failed to send SES email. to={} subject={} awsMessage={}", to, subject, awsMessage, e);
-            throw e;
-        }
+    private SendEmailResponse sendEmail (
+            String recipient,
+            String subject,
+            String htmlBody,
+            String textBody
+    ) {
+        SendEmailRequest request = SendEmailRequest.builder()
+                .source(formatFrom(fromName, fromEmail))
+                .destination(Destination.builder()
+                        .toAddresses(List.of(recipient))
+                        .build())
+                .message(Message.builder()
+                        .subject(Content.builder()
+                                .data(subject)
+                                .charset("UTF-8")
+                                .build())
+                        .body(Body.builder()
+                                .html(Content.builder()
+                                        .data(htmlBody)
+                                        .charset("UTF-8")
+                                        .build())
+                                .text(Content.builder()
+                                        .data(textBody)
+                                        .charset("UTF-8")
+                                        .build())
+                                .build())
+                        .build())
+                .build();
+        return sesClient.sendEmail(request);
     }
 
     // För att säkerställa att från mail finns.
@@ -149,6 +164,11 @@ public class SesNotificationPublisher implements NotificationPublisher {
                 Integer.toString(changeCount),
                 safe(e.getMessage())
         );
+    }
+
+    @Override
+    public void publishScheduleUpdate(ScheduleUpdateEvent event) {
+        log.warn("Not implemented yet (SES). event={}", event);
     }
 
     private String safe(String s) {
