@@ -9,6 +9,10 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import com.zoplanner.notification.dto.BroadcastNotificationDTO;
 
+import org.springframework.core.io.ClassPathResource;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+
 @Service
 public class NotificationService {
 
@@ -179,6 +183,16 @@ public class NotificationService {
         log.debug("DTO data: {}", dto);
 
         try {
+            String subject = dto.getSubject();
+            if (subject == null || subject.isBlank()) {
+                subject = "Broadcast";
+            }
+
+            String channel = dto.getChannel();
+            if (channel == null || channel.isBlank()) {
+                channel = "EMAIL";
+            }
+
             // loop all recipients and send the same message
             for (String email : dto.getRecipientEmails()) {
 
@@ -186,14 +200,32 @@ public class NotificationService {
                 Notification notification = new Notification(dto.getMessage(), email);
                 notificationRepository.save(notification);
 
-                // send email
+                if ("SMS".equalsIgnoreCase(channel)) {
+                    log.info("Sending sms (simulated) to {}", email);
+                    log.debug("sms body:\n{}", dto.getMessage());
+
+                    // audit log on success for each recipient
+                    notificationAuditLogger.logNotificationSent(
+                            email,
+                            channel,
+                            "BROADCAST",
+                            true
+                    );
+                    continue;
+                }
+
+                // send email via AWS path (SES) using HTML template
                 log.info("Sending broadcast email to {}", email);
-                emailService.sendEmail(email, dto.getSubject(), dto.getMessage());
+
+                String htmlBody = loadBroadcastHtml(dto.getMessage());
+
+                // IMPORTANT: use the HTML/AWS sending method in EmailService (SES)
+                emailService.sendHtmlEmail(email, subject, htmlBody);
 
                 // audit log on success for each recipient
                 notificationAuditLogger.logNotificationSent(
                         email,
-                        dto.getChannel() != null ? dto.getChannel() : "EMAIL",
+                        channel,
                         "BROADCAST",
                         true
                 );
@@ -203,10 +235,15 @@ public class NotificationService {
             log.error("Error sending broadcast notification", e);
             try {
                 if (dto.getRecipientEmails() != null) {
+                    String channel = dto.getChannel();
+                    if (channel == null || channel.isBlank()) {
+                        channel = "EMAIL";
+                    }
+
                     for (String email : dto.getRecipientEmails()) {
                         notificationAuditLogger.logNotificationSent(
                                 email,
-                                dto.getChannel() != null ? dto.getChannel() : "EMAIL",
+                                channel,
                                 "BROADCAST",
                                 false
                         );
@@ -217,6 +254,35 @@ public class NotificationService {
             }
 
             throw e;
+        }
+    }
+
+    private String loadBroadcastHtml(String message) {
+        try {
+            ClassPathResource resource = new ClassPathResource("email/broadcast.html");
+            String template = new String(resource.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
+
+            String safeMessage = (message == null) ? "" : message
+                    .replace("&", "&amp;")
+                    .replace("<", "&lt;")
+                    .replace(">", "&gt;")
+                    .replace("\"", "&quot;");
+
+            // Replace the Thymeleaf placeholder with real content.
+            // (Simple and stable for sending out final HTML)
+            template = template.replace("<p th:text=\"${message}\">MESSAGE</p>", "<p>" + safeMessage + "</p>");
+            template = template.replace("th:text=\"${message}\"", "");
+
+            return template;
+
+        } catch (IOException e) {
+            log.warn("Could not load broadcast.html template, falling back to simple html. Reason: {}", e.getMessage());
+            String safeMessage = (message == null) ? "" : message
+                    .replace("&", "&amp;")
+                    .replace("<", "&lt;")
+                    .replace(">", "&gt;")
+                    .replace("\"", "&quot;");
+            return "<html><body><p>" + safeMessage + "</p></body></html>";
         }
     }
 }
