@@ -12,7 +12,7 @@ public class OpenApiConfig {
     public OpenAPI customOpenAPI() {
         return new OpenAPI()
                 .info(new Info()
-                        .title("ZoPlanner Notification API")
+                        .title("ZoPlanner Notification API (Java)")
                         .version("v1")
                         .description("Notification service for sending emails and schedules to teachers about assignments."));
     }
