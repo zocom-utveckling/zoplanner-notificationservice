@@ -1,9 +1,11 @@
 package com.zoplanner.notification.service;
 
+import org.springframework.stereotype.Service;
 import software.amazon.awssdk.services.sqs.SqsClient;
 import software.amazon.awssdk.services.sqs.model.SendMessageRequest;
 import software.amazon.awssdk.services.sqs.model.SendMessageResponse;
 
+@Service
 public class SqsMessagePublisher {
     private final SqsClient sqsClient;
 
@@ -23,4 +25,3 @@ public class SqsMessagePublisher {
         return response.messageId();
     }
 }
-

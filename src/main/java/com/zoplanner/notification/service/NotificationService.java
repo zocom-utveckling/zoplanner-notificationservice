@@ -40,7 +40,6 @@ public class NotificationService {
             return;
         }
 
-
         log.info("Creating notification");
         log.debug("DTO data: {}", dto);
 
@@ -70,6 +69,7 @@ public class NotificationService {
         } catch (Exception e) {
             log.error("Error creating notification", e);
 
+            // audit log on failure (must be NON-FATAL)
             try {
                 notificationAuditLogger.logNotificationSent(
                         dto.getRecipient(),
@@ -79,6 +79,11 @@ public class NotificationService {
                 );
             } catch (Exception auditException) {
                 log.error("Failed to write audit log after failure", auditException);
+            }
+
+            // if the failure was ONLY audit logging, do not throw (NON-FATAL)
+            if (e.getMessage() != null && e.getMessage().contains("File write failed")) {
+                return;
             }
 
             throw e;

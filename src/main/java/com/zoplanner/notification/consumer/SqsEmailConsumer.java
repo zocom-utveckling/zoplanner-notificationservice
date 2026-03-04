@@ -13,6 +13,7 @@ import com.zoplanner.notification.service.NotificationService;
 import com.zoplanner.notification.service.WeeklyEventStore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
@@ -24,7 +25,11 @@ import software.amazon.awssdk.services.sqs.model.ReceiveMessageRequest;
 
 import java.util.List;
 
-// @Component
+// new for issue111
+import com.zoplanner.notification.event.broadcast.BroadcastNotificationEvent;
+import com.zoplanner.notification.handler.BroadcastNotificationHandler;
+
+@Component
 public class SqsEmailConsumer {
 
     private static final Logger log = LoggerFactory.getLogger(SqsEmailConsumer.class);
@@ -33,8 +38,12 @@ public class SqsEmailConsumer {
     private final NotificationService notificationService;
     private final ObjectMapper objectMapper;
     private final NewAssignmentNotificationHandler newAssignmentHandler;
-    private  NotificationDispatcher notificationDispatcher;
-    private  WeeklyEventStore weeklyEventStore;
+
+    // new for issue111
+    private final BroadcastNotificationHandler broadcastHandler;
+
+    private NotificationDispatcher notificationDispatcher;
+    private WeeklyEventStore weeklyEventStore;
     private ScheduleUpdateConsumer updateConsumer;
 
     @Value("${aws.sqs.queue.url}")
@@ -57,13 +66,36 @@ public class SqsEmailConsumer {
     public SqsEmailConsumer(SqsClient sqsClient,
                             NotificationService notificationService,
                             ObjectMapper objectMapper,
-                            NewAssignmentNotificationHandler newAssignmentHandler, ScheduleUpdateConsumer updateConsumer
+                            NewAssignmentNotificationHandler newAssignmentHandler,
+                            ScheduleUpdateConsumer updateConsumer
     ) {
         this.sqsClient = sqsClient;
         this.notificationService = notificationService;
         this.objectMapper = objectMapper;
         this.newAssignmentHandler = newAssignmentHandler;
         this.updateConsumer = updateConsumer;
+
+        // new for issue111
+        this.broadcastHandler = null;
+    }
+
+    // new for issue111 (constructor used by Spring + tests that pass broadcastHandler)
+    @Autowired
+    public SqsEmailConsumer(SqsClient sqsClient,
+                            NotificationService notificationService,
+                            ObjectMapper objectMapper,
+                            NewAssignmentNotificationHandler newAssignmentHandler,
+                            ScheduleUpdateConsumer updateConsumer,
+                            BroadcastNotificationHandler broadcastHandler
+    ) {
+        this.sqsClient = sqsClient;
+        this.notificationService = notificationService;
+        this.objectMapper = objectMapper;
+        this.newAssignmentHandler = newAssignmentHandler;
+        this.updateConsumer = updateConsumer;
+
+        // new for issue111
+        this.broadcastHandler = broadcastHandler;
     }
 
     @Scheduled(fixedDelayString = "${notification.sqs.pollDelayMs:10000}")
@@ -108,14 +140,15 @@ public class SqsEmailConsumer {
             log.debug("Processing message {} eventType={}",
                     message.messageId(), baseEvent.eventType());
 
+            // missing eventType -> legacy notification
             if (!StringUtils.hasText(baseEvent.eventType())) {
                 log.warn("❌ Saknar eventType – ignorerar message {}", message.messageId());
+                boolean processed = handleLegacyNotification(message);
+                if (processed) {
+                    deleteMessage(message);
+                }
                 return;
             }
-
-            NotificationDTO notificationDTO =
-                    objectMapper.readValue(message.body(), NotificationDTO.class);
-
 
             switch (baseEvent.eventType()) {
 
@@ -140,46 +173,25 @@ public class SqsEmailConsumer {
                     deleteMessage(message);
                 }
 
+                // new for issue111
+                case "BROADCAST_NOTIFICATION" -> {
+                    BroadcastNotificationEvent event =
+                            objectMapper.readValue(message.body(), BroadcastNotificationEvent.class);
+
+                    if (broadcastHandler == null) {
+                        log.warn("Broadcast handler is not configured, skipping message {}", message.messageId());
+                        return;
+                    }
+
+                    broadcastHandler.handle(event);
+
+                    deleteMessage(message);
+                }
 
                 default -> {
                     log.warn("⚠️ Okänt eventType {}, ignorerar", baseEvent.eventType());
-
                 }
             }
-
-        } catch (Exception e) {
-            log.error("Error processing message from SQS", e);
-        }
-        try {
-            BaseEvent baseEvent =
-                    objectMapper.readValue(message.body(), BaseEvent.class);
-
-            log.debug("Processing SQS messageId {} with eventType {}",
-                    message.messageId(),
-                    baseEvent.eventType());
-
-            if (!StringUtils.hasText(baseEvent.eventType())) {
-                log.debug("Missing eventType for message {}, treating as legacy notification",
-                        message.messageId());
-                boolean processed = handleLegacyNotification(message);
-                if (processed) {
-                    deleteMessage(message);
-                }
-                return;
-            }
-
-            switch (baseEvent.eventType()) {
-                case "NEW_ASSIGNMENT" -> handleNewAssignment(message.body());
-                default -> {
-                    boolean processed = handleLegacyNotification(message);
-                    if (processed) {
-                        deleteMessage(message);
-                    }
-                    return;
-                }
-            }
-
-            deleteMessage(message);
 
         } catch (Exception e) {
             log.error("Error processing message from SQS", e);

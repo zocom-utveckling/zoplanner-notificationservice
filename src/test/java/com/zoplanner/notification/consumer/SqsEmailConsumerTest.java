@@ -6,9 +6,8 @@ import com.zoplanner.notification.dto.EmailType;
 import com.zoplanner.notification.dto.NotificationDTO;
 import com.zoplanner.notification.event.newassignment.NewAssignmentEvent;
 import com.zoplanner.notification.handler.NewAssignmentNotificationHandler;
-import com.zoplanner.notification.service.NotificationDispatcher;
+import com.zoplanner.notification.handler.BroadcastNotificationHandler;
 import com.zoplanner.notification.service.NotificationService;
-import com.zoplanner.notification.service.WeeklyEventStore;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -37,21 +36,33 @@ class SqsEmailConsumerTest {
     private NewAssignmentNotificationHandler newAssignmentHandler;
 
     @Mock
+    private BroadcastNotificationHandler broadcastHandler; // new for issue111
+
+    @Mock
     private SqsClient sqsClient;
 
     @Mock
     private NotificationService notificationService;
 
+    @Mock
+    private ScheduleUpdateConsumer updateConsumer; // was null before
+
     private SqsEmailConsumer consumer;
     private ObjectMapper objectMapper;
     private final String testQueueUrl = "https://sqs.eu-north-1.amazonaws.com/123456789012/test-queue";
-    private ScheduleUpdateConsumer updateConsumer;
+
     @BeforeEach
     void setUp() {
         objectMapper = new ObjectMapper().findAndRegisterModules();
 
-
-        consumer = new SqsEmailConsumer(sqsClient, notificationService, objectMapper, newAssignmentHandler,updateConsumer);
+        consumer = new SqsEmailConsumer(
+                sqsClient,
+                notificationService,
+                objectMapper,
+                newAssignmentHandler,
+                updateConsumer,
+                broadcastHandler
+        );
 
         ReflectionTestUtils.setField(consumer, "queueUrl", testQueueUrl);
         ReflectionTestUtils.setField(consumer, "pollingEnabled", true);
@@ -436,5 +447,43 @@ class SqsEmailConsumerTest {
         verify(notificationService, never()).createNotification(any(NotificationDTO.class));
     }
 
-}
+    // new test for issue111
+    @Test
+    void pollMessages_WhenBroadcastNotificationEvent_ShouldRouteToHandlerAndDeleteMessage() {
+        // arrange
+        String body = """
+        {
+          "eventType": "BROADCAST_NOTIFICATION",
+          "eventId": "123e4567-e89b-12d3-a456-426614174000",
+          "timestamp": "2025-01-01T10:00:00Z",
+          "managerId": "m1",
+          "recipientGroup": "AllMyConsultants",
+          "recipientEmails": ["a@test.com","b@test.com"],
+          "subject": "Info",
+          "message": "Hello consultants",
+          "emailType": "HTML"
+        }
+        """;
 
+        Message sqsMessage = Message.builder()
+                .messageId("msg-broadcast")
+                .receiptHandle("rh-broadcast")
+                .body(body)
+                .build();
+
+        when(sqsClient.receiveMessage(any(ReceiveMessageRequest.class)))
+                .thenReturn(ReceiveMessageResponse.builder().messages(sqsMessage).build());
+
+        when(sqsClient.deleteMessage(any(DeleteMessageRequest.class)))
+                .thenReturn(DeleteMessageResponse.builder().build());
+
+        // act
+        consumer.pollMessages();
+
+        // assert
+        verify(broadcastHandler).handle(any());
+        verify(sqsClient).deleteMessage(any(DeleteMessageRequest.class));
+        verify(notificationService, never()).createNotification(any(NotificationDTO.class));
+    }
+
+}

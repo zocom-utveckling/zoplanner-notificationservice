@@ -52,4 +52,34 @@ public class EmailTemplateService {
         return (s == null || s.isBlank()) ? "-" : s;
     }
 
+
+    // Broadcast email templates
+
+
+    public String renderBroadcastHtml(String managerId, String recipientGroup, String message) {
+
+        String html = loadTemplate("email/broadcast.html");
+
+        return html
+                .replace("{{managerId}}", safe(managerId))
+                .replace("{{recipientGroup}}", safe(recipientGroup))
+                .replace("{{message}}", safe(message));
+    }
+
+    public String renderBroadcastText(String managerId, String recipientGroup, String message) {
+
+        return """
+                Meddelande från konsultchef
+
+                Manager: %s
+                Grupp: %s
+
+                %s
+                """.formatted(
+                safe(managerId),
+                safe(recipientGroup),
+                safe(message)
+        );
+    }
+
 }
