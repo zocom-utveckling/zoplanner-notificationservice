@@ -108,6 +108,7 @@ public class SqsPoller {
             }
 
             // 4) Route på eventType
+
             switch (eventType.trim().toUpperCase()) {
                 case "NEW_ASSIGNMENT" -> {
                     NewAssignmentEvent event = objectMapper.readValue(payloadJson, NewAssignmentEvent.class);

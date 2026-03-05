@@ -1,9 +1,11 @@
 package com.zoplanner.notification.notification.email;
 
+import com.zoplanner.notification.event.ScheduleUpdateEvent;
 import com.zoplanner.notification.event.newassignment.NewAssignmentEvent;
 import org.springframework.stereotype.Service;
 import org.springframework.core.io.ClassPathResource;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 
 @Service
 public class EmailTemplateService {
@@ -34,6 +36,50 @@ public class EmailTemplateService {
         );
     }
 
+
+
+    public String renderScheduleUpdatedHtml(ScheduleUpdateEvent s){
+
+        String html = loadTemplate("email/schedule-updated.html");
+
+        return html
+                .replace("{{teacherName}}", safe(s.getTeacherEmail()))
+                .replace("{{assignmentDueDate}}", safe(s.getEventTime() !=null ? s.getEventTime().toString() : "-"))
+                .replace("{{changes}}", formatChanges(s.getChanges()))
+                .replace("{{message}}", s.getMessage())
+                .replace("{{ctaUrl}}", "https://zoplanner.com");
+
+    }
+    public String renderScheduleUpdatedText(ScheduleUpdateEvent s) {
+
+        return """
+            Schedule updated
+
+            Teacher: %s
+            Time: %s
+            Changes: %s
+            Message: %s
+
+            ZoPlanner: https://zoplanner.com
+            """.formatted(
+                safe(s.getTeacherEmail()),
+                safe(s.getEventTime() != null ? s.getEventTime().toString() : "-"),
+                safe(s.getChanges().toString()),
+                safe(s.getMessage())
+        );
+    }
+    private String formatChanges(List<ScheduleUpdateEvent.ScheduleChange> changes) {
+
+        if (changes == null || changes.isEmpty()) {
+            return "-";
+        }
+
+        return changes.stream()
+                .map(c -> "%s → %s".formatted(
+                        safe(c.getOldValue()),
+                        safe(c.getNewValue())))
+                .collect(java.util.stream.Collectors.joining("<br>"));
+    }
     private String loadTemplate(String path) {
         try {
             var resource = new ClassPathResource(path);
