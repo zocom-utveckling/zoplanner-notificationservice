@@ -1,6 +1,7 @@
 package com.zoplanner.notification.notification;
 
 import com.zoplanner.notification.event.ScheduleUpdateEvent;
+import com.zoplanner.notification.event.directmessage.DirectMessageEvent;
 import com.zoplanner.notification.event.newassignment.NewAssignmentEvent;
 import com.zoplanner.notification.notification.email.EmailTemplateService;
 import lombok.extern.slf4j.Slf4j;
@@ -87,6 +88,26 @@ public class SesNotificationPublisher implements NotificationPublisher {
                 recipient,
                 fromEmail
         );
+    }
+
+    @Override
+    public void publishDirectMessage(DirectMessageEvent event) {
+        requireFromEmail();
+
+        String recipient = safe(event.recipientEmail());
+        if (recipient.equals("-")) {
+            log.warn("Missing recipientEmail on DIRECT_MESSAGE. Not sending. event={}", event);
+            return;
+        }
+
+        String subject = safe(event.subject());
+        if (subject.equals("-")) subject = "Meddelande från ZoPlanner";
+
+        String htmlBody = templateService.renderDirectMessageHtml(event);
+        String textBody = templateService.renderDirectMessageText(event);
+
+        SendEmailResponse response = sendEmail(recipient, subject, htmlBody, textBody);
+        log.info("Sent DIRECT_MESSAGE via SES, messageId={} to={}", response.messageId(), recipient);
     }
 
     // Metod för att ta emot text-email från  AWS SES

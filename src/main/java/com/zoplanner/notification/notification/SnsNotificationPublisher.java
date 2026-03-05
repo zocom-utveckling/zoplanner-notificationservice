@@ -5,6 +5,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.zoplanner.notification.event.ScheduleUpdateEvent;
 import com.zoplanner.notification.event.newassignment.NewAssignmentEvent;
+import com.zoplanner.notification.event.directmessage.DirectMessageEvent;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -117,6 +118,13 @@ public class SnsNotificationPublisher implements NotificationPublisher {
 
         // Optional: if you also want the machine event on the events topic, uncomment:
         // publishEventJson(eventsTopicArn, eventType, event, attrs);
+    }
+
+    @Override
+    public void publishDirectMessage(DirectMessageEvent event) {
+        log.warn("DIRECT_MESSAGE not supported by SNS publisher (use SES). eventId={} to={}",
+                event.eventId(),
+                safe(event.recipientEmail()));
     }
 
     @SuppressWarnings("unused")
