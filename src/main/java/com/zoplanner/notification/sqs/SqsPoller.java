@@ -5,6 +5,7 @@ import com.zoplanner.notification.event.BaseEvent;
 import com.zoplanner.notification.event.ScheduleUpdateEvent;
 import com.zoplanner.notification.event.newassignment.NewAssignmentEvent;
 import com.zoplanner.notification.notification.NotificationPublisher;
+import com.zoplanner.notification.event.directmessage.DirectMessageEvent;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -130,6 +131,19 @@ public class SqsPoller {
                             event.getPreference() != null ? event.getPreference().name() : "-");
 
                     notificationPublisher.publishScheduleUpdate(event);
+                    deleteMessage(message);
+                }
+
+                case "DIRECT_MESSAGE", "DIRECT_MSG" -> {
+                    DirectMessageEvent event = objectMapper.readValue(payloadJson, DirectMessageEvent.class);
+
+                    log.info("Handling DIRECT_MESSAGE messageId={} eventId={} to={} subject={}",
+                            message.messageId(),
+                            safeEventId(event.eventId()),
+                            safe(event.recipientEmail()),
+                            safe(event.subject()));
+
+                    notificationPublisher.publishDirectMessage(event);
                     deleteMessage(message);
                 }
 

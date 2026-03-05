@@ -2,6 +2,7 @@ package com.zoplanner.notification.notification.email;
 
 import com.zoplanner.notification.event.ScheduleUpdateEvent;
 import com.zoplanner.notification.event.newassignment.NewAssignmentEvent;
+import com.zoplanner.notification.event.directmessage.DirectMessageEvent;
 import org.springframework.stereotype.Service;
 import org.springframework.core.io.ClassPathResource;
 import java.nio.charset.StandardCharsets;
@@ -96,6 +97,34 @@ public class EmailTemplateService {
 
     private String safe(String s) {
         return (s == null || s.isBlank()) ? "-" : s;
+    }
+
+    public String renderDirectMessageHtml(DirectMessageEvent e) {
+
+        String html = loadTemplate("email/direct-message.html");
+
+        return html
+                .replace("{{subject}}", safe(e.subject()))
+                .replace("{{message}}", safe(e.message()))
+                .replace("{{recipientEmail}}", safe(e.recipientEmail()))
+                .replace("{{ctaUrl}}", "https://zoplanner.com");
+    }
+
+    public String renderDirectMessageText(DirectMessageEvent e) {
+
+        return """
+            Nytt meddelande från ZoPlanner
+
+            Ämne: %s
+
+            %s
+
+            ZoPlanner:
+            https://zoplanner.com
+            """.formatted(
+                safe(e.subject()),
+                safe(e.message())
+        );
     }
 
 }
