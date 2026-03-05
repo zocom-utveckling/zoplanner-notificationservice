@@ -64,22 +64,30 @@ public class SesNotificationPublisher implements NotificationPublisher {
 
 
     // Skickar ett mail för SCHEDULE_UPDATED
-    /* @Override
+    @Override
     public void publishScheduleUpdate(ScheduleUpdateEvent event) {
         requireFromEmail();
 
-        String recipient = safe(event.getTeacherEmail()); // Hämta mottagar mail, om det saknas logga och avbryt
+        String recipient = safe(event.getTeacherEmail());
         if (recipient.equals("-")) {
             log.warn("Missing teacherEmail on SCHEDULE_UPDATED event. Not publishing to SES. event={}", event);
             return;
         }
 
         String subject = "SCHEDULE_UPDATED";
-        String body = buildEmailMessage(event);
 
-        SendEmailResponse response = sendTextEmail(recipient, subject, body);
-        log.info("Sent SCHEDULE_UPDATED email via SES, messageId={} to={} from={}", response.messageId(), recipient, fromEmail);
-    } */
+        String htmlBody = templateService.renderScheduleUpdatedHtml(event);
+        String textBody = templateService.renderScheduleUpdatedText(event);
+
+        SendEmailResponse response = sendEmail(recipient, subject, htmlBody, textBody);
+
+        log.info(
+                "Sent SCHEDULE_UPDATED email via SES, messageId={} to={} from={}",
+                response.messageId(),
+                recipient,
+                fromEmail
+        );
+    }
 
     // Metod för att ta emot text-email från  AWS SES
     private SendEmailResponse sendEmail (
@@ -141,35 +149,6 @@ public class SesNotificationPublisher implements NotificationPublisher {
         );
     }
 
-    // Bygger texten i mailet för SCHEDULE_UPDATED (ska ändras till HTML template)
-    private String buildEmailMessage(ScheduleUpdateEvent e) {
-        int changeCount = (e.getChanges() == null) ? 0 : e.getChanges().size();
-        return """
-                Ditt schema har uppdaterats.
-                Lärare (email): %s
-                Källa: %s
-                Preferens: %s
-                Tid för händelse: %s
-                Skapad: %s
-                Antal ändringar: %s
-                
-                Meddelande:
-                %s
-                """.formatted(
-                safe(e.getTeacherEmail()),
-                safe(e.getSource()),
-                e.getPreference() != null ? e.getPreference().name() : "-",
-                e.getEventTime() != null ? e.getEventTime().toString() : "-",
-                e.getCreatedAt() != null ? e.getCreatedAt().toString() : "-",
-                Integer.toString(changeCount),
-                safe(e.getMessage())
-        );
-    }
-
-    @Override
-    public void publishScheduleUpdate(ScheduleUpdateEvent event) {
-        log.warn("Not implemented yet (SES). event={}", event);
-    }
 
     private String safe(String s) {
         return (s == null || s.isBlank()) ? "-" : s;
