@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="sv">
+<body style="margin:0; padding:0; background-color:#f3f4f6; font-family:Segoe UI, Roboto, Arial, sans-serif;">
+<table border="0" cellpadding="0" cellspacing="0" style="background-color:#f3f4f6;" width="100%">
+    <tr>
+        <td align="center" style="padding:24px 16px;">
+            <table border="0" cellpadding="0" cellspacing="0" style="background-color:#ffffff; border:1px solid #e5e7eb; border-radius:12px; max-width:700px; overflow:hidden;" width="700">
+                <tr>
+                    <td style="padding:24px;">
+                        <table width="100%">
+                            <tr>
+                                <td>
+                                    <div style="font-size:20px;font-weight:700;color:#111827;">
+                                        ZoPlanner
+                                    </div>
+                                    <div style="font-size:12px;color:#6b7280;">
+                                        Schemaöversikt
+                                    </div>
+                                </td>
+                                <td align="right">
+                                    <div style="font-size:18px;font-weight:700;color:#111827;">
+                                        {{monthTitle}}
+                                    </div>
+                                    <div style="font-size:12px;color:#6b7280;">
+                                        {{weekRange}}
+                                    </div>
+                                </td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+                <!-- TEACHER -->
+                <tr>
+                    <td style="padding:0 24px 16px 24px;font-size:14px;color:#374151;">
+                        Lärare:
+                        <strong>
+                            {{teacherName}}
+                        </strong>
+                    </td>
+                </tr>
+                <!-- DAY LABELS -->
+                <tr>
+                    <td style="padding:0 16px;background:#f9fafb;border-top:1px solid #e5e7eb;border-bottom:1px solid #e5e7eb;">
+                        <table width="100%">
+                            <tr>
+                                <td align="center" style="padding:10px;font-size:11px;color:#6b7280;font-weight:600;" width="14.28%">
+                                    Mån
+                                </td>
+                                <td align="center" style="padding:10px;font-size:11px;color:#6b7280;font-weight:600;" width="14.28%">
+                                    Tis
+                                </td>
+                                <td align="center" style="padding:10px;font-size:11px;color:#6b7280;font-weight:600;" width="14.28%">
+                                    Ons
+                                </td>
+                                <td align="center" style="padding:10px;font-size:11px;color:#6b7280;font-weight:600;" width="14.28%">
+                                    Tor
+                                </td>
+                                <td align="center" style="padding:10px;font-size:11px;color:#6b7280;font-weight:600;" width="14.28%">
+                                    Fre
+                                </td>
+                                <td align="center" style="padding:10px;font-size:11px;color:#9ca3af;font-weight:600;" width="14.28%">
+                                    Lör
+                                </td>
+                                <td align="center" style="padding:10px;font-size:11px;color:#9ca3af;font-weight:600;" width="14.28%">
+                                    Sön
+                                </td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+                <!-- CALENDAR GRID -->
+                <tr>
+                    <td style="padding:16px;">
+                        <table border="0" cellpadding="0" cellspacing="4" width="100%">
+                            <!-- WEEK 1 -->
+                            <tr valign="top">
+                                <td style="border:1px solid #e5e7eb;padding:8px;" width="14.28%">
+                                    {{day1}}
+                                </td>
+                                <td style="border:1px solid #e5e7eb;padding:8px;" width="14.28%">
+                                    {{day2}}
+                                </td>
+                                <td style="border:1px solid #e5e7eb;padding:8px;" width="14.28%">
+                                    {{day3}}
+                                </td>
+                                <td style="border:1px solid #e5e7eb;padding:8px;" width="14.28%">
+                                    {{day4}}
+                                </td>
+                                <td style="border:1px solid #e5e7eb;padding:8px;" width="14.28%">
+                                    {{day5}}
+                                </td>
+                                <td style="border:1px solid #e5e7eb;padding:8px;" width="14.28%">
+                                    {{day6}}
+                                </td>
+                                <td style="border:1px solid #e5e7eb;padding:8px;" width="14.28%">
+                                    {{day7}}
+                                </td>
+                            </tr>
+                            <tr>
+                                <td colspan="7" style="height:4px;">
+                                </td>
+                            </tr>
+                            <!-- WEEK 2 -->
+                            <tr valign="top">
+                                <td style="border:1px solid #e5e7eb;padding:8px;">
+                                    {{day8}}
+                                </td>
+                                <td style="border:1px solid #e5e7eb;padding:8px;">
+                                    {{day9}}
+                                </td>
+                                <td style="border:1px solid #e5e7eb;padding:8px;">
+                                    {{day10}}
+                                </td>
+                                <td style="border:1px solid #e5e7eb;padding:8px;">
+                                    {{day11}}
+                                </td>
+                                <td style="border:1px solid #e5e7eb;padding:8px;">
+                                    {{day12}}
+                                </td>
+                                <td style="border:1px solid #e5e7eb;padding:8px;">
+                                    {{day13}}
+                                </td>
+                                <td style="border:1px solid #e5e7eb;padding:8px;">
+                                    {{day14}}
+                                </td>
+                            </tr>
+                            <tr>
+                                <td colspan="7" style="height:4px;">
+                                </td>
+                            </tr>
+                            <!-- WEEK 3 -->
+                            <tr valign="top">
+                                <td style="border:1px solid #e5e7eb;padding:8px;">
+                                    {{day15}}
+                                </td>
+                                <td style="border:1px solid #e5e7eb;padding:8px;">
+                                    {{day16}}
+                                </td>
+                                <td style="border:1px solid #e5e7eb;padding:8px;">
+                                    {{day17}}
+                                </td>
+                                <td style="border:1px solid #e5e7eb;padding:8px;">
+                                    {{day18}}
+                                </td>
+                                <td style="border:1px solid #e5e7eb;padding:8px;">
+                                    {{day19}}
+                                </td>
+                                <td style="border:1px solid #e5e7eb;padding:8px;">
+                                    {{day20}}
+                                </td>
+                                <td style="border:1px solid #e5e7eb;padding:8px;">
+                                    {{day21}}
+                                </td>
+                            </tr>
+                            <tr>
+                                <td colspan="7" style="height:4px;">
+                                </td>
+                            </tr>
+                            <!-- WEEK 4 -->
+                            <tr valign="top">
+                                <td style="border:1px solid #e5e7eb;padding:8px;">
+                                    {{day22}}
+                                </td>
+                                <td style="border:1px solid #e5e7eb;padding:8px;">
+                                    {{day23}}
+                                </td>
+                                <td style="border:1px solid #e5e7eb;padding:8px;">
+                                    {{day24}}
+                                </td>
+                                <td style="border:1px solid #e5e7eb;padding:8px;">
+                                    {{day25}}
+                                </td>
+                                <td style="border:1px solid #e5e7eb;padding:8px;">
+                                    {{day26}}
+                                </td>
+                                <td style="border:1px solid #e5e7eb;padding:8px;">
+                                    {{day27}}
+                                </td>
+                                <td style="border:1px solid #e5e7eb;padding:8px;">
+                                    {{day28}}
+                                </td>
+                            </tr>
+                            <tr>
+                                <td colspan="7" style="height:4px;">
+                                </td>
+                            </tr>
+                            <!-- WEEK 5 -->
+                            <tr valign="top">
+                                <td style="border:1px solid #e5e7eb;padding:8px;">
+                                    {{day29}}
+                                </td>
+                                <td style="border:1px solid #e5e7eb;padding:8px;">
+                                    {{day30}}
+                                </td>
+                                <td style="border:1px solid #e5e7eb;padding:8px;">
+                                    {{day31}}
+                                </td>
+                                <td style="border:1px solid #e5e7eb;padding:8px;">
+                                </td>
+                                <td style="border:1px solid #e5e7eb;padding:8px;">
+                                </td>
+                                <td style="border:1px solid #e5e7eb;padding:8px;">
+                                </td>
+                                <td style="border:1px solid #e5e7eb;padding:8px;">
+                                </td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+                <tr>
+                    <td style="padding:20px 24px;">
+                        <table>
+                            <tr>
+                                <td style="background:#111827;border-radius:10px;">
+                                    <a href="{{ctaUrl}}" style="display:inline-block;padding:12px 16px;color:#ffffff;text-decoration:none;font-weight:600;">
+                                        Öppna i ZoPlanner
+                                    </a>
+                                </td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+                <tr>
+                    <td style="padding:12px 24px 20px 24px;font-size:12px;color:#6b7280;">
+                        Du får detta mail eftersom du har notifieringar aktiverade i ZoPlanner.
+                    </td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+</table>
+</body>
+</html>
