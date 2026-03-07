@@ -130,7 +130,7 @@ public class EmailTemplateService {
     }
 
     public String renderScheduleCalendarHtml(ScheduleCalendarEvent e) {
-        String html = loadTemplate("email/schedule-calendar.html");
+        String html = loadTemplate("email/schedule-event.html");
 
         html = html
                 .replace("{{monthTitle}}", safe(e.monthTitle()))
