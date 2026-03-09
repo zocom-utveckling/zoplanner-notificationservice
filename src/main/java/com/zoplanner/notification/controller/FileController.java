@@ -11,8 +11,9 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/files")
@@ -49,6 +50,9 @@ public class FileController {
             FileResponse response = fileService.replaceFile(id, file);
             log.info("File replaced successfully: {}", response);
             return ResponseEntity.ok(response);
+        } catch (com.zoplanner.notification.exception.FileNotFoundException e) {
+            log.error("File not found with ID {}: {}", id, e.getMessage());
+            throw e;  // Re-throw to let GlobalExceptionHandler return 404
         } catch (IOException e) {
             log.error("Error replacing file: {}", e.getMessage(), e);
             throw new FileStorageException("Failed to replace file: " + e.getMessage(), e);
@@ -56,11 +60,17 @@ public class FileController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteFile(@PathVariable Integer id) {
+    public ResponseEntity<Map<String, String>> deleteFile(@PathVariable Integer id) {
         log.info("Received file delete request for ID: {}", id);
         fileService.deleteFile(id);
         log.info("File deleted successfully with ID: {}", id);
-        return ResponseEntity.noContent().build();
+
+        Map<String, String> response = new HashMap<>();
+        response.put("status", "success");
+        response.put("message", "File with ID " + id + " has been successfully deleted");
+        response.put("deleteFieldId", String.valueOf(id));
+
+        return ResponseEntity.ok(response);
     }
 
     @GetMapping("/{id}")
