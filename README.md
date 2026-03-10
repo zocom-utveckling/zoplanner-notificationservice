@@ -390,13 +390,7 @@ All 7 file service tests should pass:
 
 ### Integration Tests
 
-See `POSTMAN_TESTING_GUIDE.md` for comprehensive API testing with Postman.
-
-## Documentation
-
-- **POSTMAN_TESTING_GUIDE.md** - Complete testing guide for file upload with Postman
-- **SETUP_GUIDE.md** - IntelliJ IDEA and development environment setup instructions
-- **ZoPlanner-File-Upload.postman_collection.json** - Import-ready Postman collection
+For comprehensive API testing with Postman, see the **"Testing Guide for Postman"** section under **File Upload Feature** above.
 
 ## Technology Stack
 
