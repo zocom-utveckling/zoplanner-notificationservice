@@ -208,17 +208,6 @@ spring.servlet.multipart.max-request-size=10MB
 spring.servlet.multipart.enabled=true
 ```
 
-### Important Notes
-
-**Fixed Issue:**
-⚠️ The `@Lob` annotation was removed from `FileEntity.java` as it conflicted with the explicit `BYTEA` column definition and caused type mismatch errors.
-
-**Configuration:**
-- `spring.jpa.hibernate.ddl-auto` is set to `update` for development convenience
-- This auto-creates the `files` table if it doesn't exist
-- For production, consider using `validate` or `none` with managed migrations
-- The fix (removing `@Lob`) allows `ddl-auto=update` to work correctly
-
 ## REST Endpoint Examples (Template)
 > Add to `NotificationController` (adapt as needed)
 ```java
