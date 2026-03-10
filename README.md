@@ -1,88 +1,88 @@
 # Notification Service
 
-En Spring Boot-baserad notifikationstjänst (Java) för att skicka och hantera notiser.
-Denna README är skapad för user storyn: **"Som utvecklare vill jag ha väldokumenterad kod i en README så att andra kan bygga vidare i framtiden."**
+A Spring Boot-based notification service (Java) for sending and managing notifications.
+This README was created for the user story: **"As a developer, I want well-documented code in a README so that others can build upon it in the future."**
 
-## Översikt
-- **Språk/ramverk:** Java, Spring Boot
-- **Bygg:** Maven
-- **Paket-rotnamn:** `com.zoplanner.notification`
-- **Arkitektur:** Fristående mikroservice (event-driven)
-- **Moduler (utifrån befintliga filer):**
-    - `controller`: REST-kontrollers (t.ex. `NotificationController`)
-    - `repository`: Persistens/DB-repositories (t.ex. `NotificationRepository`)
-    - `dto`: Data Transfer Objects (t.ex. `NotificationDTO`)
-    - `model`: Domänklass(er) (t.ex. `Notification`)
-    - `service`: Tjänstelogik (t.ex. `NotificationTemplate`)
+## Overview
+- **Language/Framework:** Java, Spring Boot
+- **Build Tool:** Maven
+- **Package Root:** `com.zoplanner.notification`
+- **Architecture:** Standalone microservice (event-driven)
+- **Modules (based on existing files):**
+    - `controller`: REST controllers (e.g., `NotificationController`)
+    - `repository`: Persistence/DB repositories (e.g., `NotificationRepository`)
+    - `dto`: Data Transfer Objects (e.g., `NotificationDTO`)
+    - `model`: Domain classes (e.g., `Notification`)
+    - `service`: Business logic (e.g., `NotificationTemplate`)
 
-> **Viktigt:** Denna tjänst är **fristående** och har inga beroenden till andra ZoPlanner-repositories. Den kan köras helt självständigt med sin egen databas.
+> **Important:** This service is **standalone** and has no dependencies on other ZoPlanner repositories. It can run completely independently with its own database.
 
-> **Notera:** `NotificationController` är i nuläget tom — fyll på med endpoints enligt behov (se mall nedan).
+> **Note:** `NotificationController` is currently empty — add endpoints as needed (see template below).
 
-## Kom igång (lokalt)
-Förutsätter att du har **Java 21+** och **Maven 3.9+** installerat.
+## Getting Started (Local)
+Requires **Java 21+** and **Maven 3.9+** installed.
 
 ```bash
-# 1) Bygg och kör tester
-./mvnw clean verify   # eller: mvn clean verify
+# 1) Build and run tests
+./mvnw clean verify   # or: mvn clean verify
 
-# 2) Starta applikationen
-./mvnw spring-boot:run   # eller: mvn spring-boot:run
+# 2) Start the application
+./mvnw spring-boot:run   # or: mvn spring-boot:run
 
-# Applikationen körs på: http://localhost:8082
+# Application runs on: http://localhost:8082
 ```
 
-### Kör som JAR
+### Run as JAR
 ```bash
 ./mvnw clean package
 java -jar target/*.jar
 ```
 
-## Kör med Docker
+## Running with Docker
 
-### Snabbstart med Docker (Standalone)
+### Quick Start with Docker (Standalone)
 
-Denna tjänst kan köras helt fristående med sin egen databas:
+This service can run completely standalone with its own database:
 
 ```bash
-# 1) Bygg JAR-filen (skippa tester)
+# 1) Build JAR file (skip tests)
 mvn clean package -DskipTests
 
-# 2) Starta container med docker-compose
+# 2) Start containers with docker-compose
 docker-compose up -d --build
 
-# 3) Kontrollera status
+# 3) Check status
 docker-compose ps
 
-# 4) Se loggar
+# 4) View logs
 docker-compose logs -f
 ```
 
-Applikationen körs nu på: http://localhost:8082
-PostgreSQL databas körs på: localhost:5432
+Application now runs on: http://localhost:8082
+PostgreSQL database runs on: localhost:5432
 
-### Docker-kommandon
+### Docker Commands
 
-**Vanligaste kommandona:**
-- Starta: `docker-compose up -d`
-- Stoppa: `docker-compose down`
-- Rebuilda efter kodändringar: `mvn clean package -DskipTests && docker-compose up -d --build`
-- Visa loggar: `docker-compose logs -f notification-service`
-- Visa databas-loggar: `docker-compose logs -f zoplanner-database`
-- Rensa allt: `docker-compose down -v` (tar bort containers och volymer)
+**Most common commands:**
+- Start: `docker-compose up -d`
+- Stop: `docker-compose down`
+- Rebuild after code changes: `mvn clean package -DskipTests && docker-compose up -d --build`
+- View logs: `docker-compose logs -f notification-service`
+- View database logs: `docker-compose logs -f zoplanner-database`
+- Clean everything: `docker-compose down -v` (removes containers and volumes)
 
-### Docker-filer
+### Docker Files
 
-- **Dockerfile** - Container-definition för notification service
-- **docker-compose.yml** - Standalone setup (notification service + databas)
-- **database/Dockerfile** - PostgreSQL databas-container
-- **.dockerignore** - Exkluderar onödiga filer från Docker-bygget
-- **.env** - Miljövariabler (skapa denna från .env.example om den inte finns)
+- **Dockerfile** - Container definition for notification service
+- **docker-compose.yml** - Standalone setup (notification service + database)
+- **database/Dockerfile** - PostgreSQL database container
+- **.dockerignore** - Excludes unnecessary files from Docker build
+- **.env** - Environment variables
 
-## Konfiguration (miljövariabler/properties)
-Lägg till/ändra `application.properties` enligt ert behov.
+## Configuration (Environment Variables/Properties)
+Add/modify `application.properties` as needed.
 
-### Lokalt (application.properties)
+### Local (application.properties)
 ```properties
 server.port=8082
 spring.application.name=notification-service
@@ -98,12 +98,16 @@ aws.ses.from.name=${AWS_SES_FROM_NAME:ZoPlanner Notifications}
 aws.sqs.queue-url=${AWS_SQS_QUEUE_URL}
 ```
 
-### Docker (med .env fil)
-Använder samma `application.properties` men läser värden från `.env` fil:
+### Docker (with .env file)
+Uses the same `application.properties` but reads values from `.env` file:
 ```bash
-cp .env.example .env
-# Redigera .env med dina AWS-credentials
-# AWS credentials (DEV ONLY)
+# Database
+HOST=zoplanner-database
+PORT=5432
+POSTGRES_USER=postgres
+POSTGRES_PASSWORD=test123
+
+# AWS credentials
 AWS_ACCESS_KEY_ID=xxxxxxxx
 AWS_SECRET_ACCESS_KEY=xxxxxxxx
 AWS_REGION=eu-north-1
@@ -113,34 +117,194 @@ AWS_SES_FROM_EMAIL=noreply@zoplanner.com
 AWS_SES_FROM_NAME=ZoPlanner Notifications
 
 # SQS
-AWS_SQS_QUEUE_URL=https://sqs.eu-north-1.amazonaws.com/123456789012/zoplanner-notifications
+SQS_QUEUE_URL=https://sqs.eu-north-1.amazonaws.com/123456789012/zoplanner-notifications
 ```
 
-## Projektstruktur (exempel)
+## Project Structure
 ```
 src/
  └── main/
      ├── java/com/zoplanner/notification/
      │   ├── NotificationServiceApplication.java
      │   ├── config/
-     │   │   └── AwsConfig.java
+     │   │   ├── AwsConfig.java
+     │   │   ├── AwsSesConfig.java
+     │   │   ├── AwsSqsConfig.java
+     │   │   └── AwsSnsConfig.java
      │   ├── controller/
-     │   │   └── NotificationController.java
+     │   │   ├── NotificationController.java
+     │   │   ├── EmailController.java
+     │   │   └── FileController.java
      │   ├── dto/
-     │   │   └── NotificationDTO.java
-     │   ├── model/         # eller entity/
-     │   │   └── Notification.java
+     │   │   ├── NotificationDTO.java
+     │   │   ├── EmailRequest.java
+     │   │   └── FileResponse.java
+     │   ├── model/
+     │   │   ├── Notification.java
+     │   │   └── FileEntity.java
      │   ├── repository/
-     │   │   └── NotificationRepository.java
-     │   └── template/
-     │       └── NotificationTemplate.java
+     │   │   ├── NotificationRepository.java
+     │   │   └── FileRepository.java
+     │   ├── service/
+     │   │   ├── NotificationService.java
+     │   │   ├── EmailService.java
+     │   │   └── FileService.java
+     │   └── exception/
+     │       ├── GlobalExceptionHandler.java
+     │       ├── FileNotFoundException.java
+     │       └── FileStorageException.java
      └── resources/
-         ├── application.yml
-         └── db/migration/   # Flyway-migreringar (om ni använder)
+         └── application.properties
 ```
 
-## Exempel på REST-endpoints (mall)
-> Lägg i `NotificationController` (anpassa efter behov)
+## File Upload Feature (Consultant Images)
+
+### Overview of Core Functions
+
+**FileService - 4 main functions:**
+
+- **uploadFile(MultipartFile file)**
+  - Receives a file via MultipartFile
+  - Extracts metadata (name, type, size) and binary data
+  - Saves to database via FileRepository
+  - Returns FileResponse with ID and URL
+
+- **replaceFile(Integer id, MultipartFile file)**
+  - Finds existing file by ID
+  - Throws FileNotFoundException if ID doesn't exist
+  - Updates all field data with new file
+  - Returns updated FileResponse
+
+- **deleteFile(Integer id)**
+  - Checks that the file exists
+  - Throws FileNotFoundException if ID doesn't exist
+  - Removes the file from the database
+  - Returns nothing (void)
+
+- **getFile(Integer id)**
+  - Retrieves file from database by ID
+  - Throws FileNotFoundException if ID doesn't exist
+  - Returns complete FileEntity with binary data
+  - Used by controller to download files
+
+### API Endpoints
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/files` | Upload a new file |
+| GET | `/files/{id}` | Download a file |
+| PUT | `/files/{id}` | Replace an existing file |
+| DELETE | `/files/{id}` | Delete a file |
+
+### Testing Guide for Postman
+
+#### Test 1: Upload File
+- **Method:** `POST`
+- **URL:** `http://localhost:8082/files`
+- **Body:** 
+  - Select `form-data`
+  - Key: `file` (change type to `File` via dropdown)
+  - Value: Select a file from your computer
+- **Click:** Send
+- **Expected response:**
+```json
+{
+  "id": 1,
+  "url": "/files/1",
+  "fileName": "your-file.pdf",
+  "size": 12345
+}
+```
+
+#### Test 2: Retrieve/Download File
+- **Method:** `GET`
+- **URL:** `http://localhost:8082/files/1`
+- **Body:** (no body needed)
+- **Click:** Send
+- **Expected:** File downloads or displays in Postman
+
+#### Test 3: Replace File
+- **Method:** `PUT`
+- **URL:** `http://localhost:8082/files/1`
+- **Body:**
+  - Select `form-data`
+  - Key: `file` (type `File`)
+  - Value: Select a new/different file
+- **Click:** Send
+- **Expected response:**
+```json
+{
+  "id": 1,
+  "url": "/files/1",
+  "fileName": "updated-file.pdf",
+  "size": 54321
+}
+```
+
+#### Test 4: Delete File
+- **Method:** `DELETE`
+- **URL:** `http://localhost:8082/files/1`
+- **Body:** (no body needed)
+- **Click:** Send
+- **Expected response:**
+```json
+{
+  "status": "success",
+  "message": "File with ID 1 has been successfully deleted",
+  "deleteFieldId": "1"
+}
+```
+
+#### Test 5: Error Handling - File Not Found
+- **Method:** `GET` (or `PUT`/`DELETE`)
+- **URL:** `http://localhost:8082/files/999`
+- **Click:** Send
+- **Expected:** HTTP 404 with error message
+```json
+{
+  "timestamp": "2026-03-10T...",
+  "status": 404,
+  "error": "Not Found",
+  "message": "File not found with id: 999"
+}
+```
+
+**Tip:** Save the ID from the upload response to use in subsequent tests.
+
+#### Verification Checklist
+- ✅ File uploads and returns correct metadata
+- ✅ Downloaded file matches uploaded file
+- ✅ File replacement updates the content
+- ✅ File deletion removes the record from database
+- ✅ Operations on non-existent files return 404
+- ✅ Check database to verify records are created/updated/deleted
+- ✅ Check application logs for info/error messages
+- ✅ Test with different file types (PDF, images, text)
+- ✅ Verify that `createdAt` and `updatedAt` timestamps are set correctly
+
+### Database Schema
+
+Files are stored in the `files` table:
+- `id` - Auto-generated primary key
+- `file_name` - Original filename
+- `content_type` - MIME type (e.g., image/jpeg)
+- `size` - File size in bytes
+- `data` - Binary file data (BYTEA)
+- `created_at` - Upload timestamp
+- `updated_at` - Last update timestamp
+
+### Configuration
+
+Maximum file size: **10MB** (configurable in `application.properties`)
+
+```properties
+spring.servlet.multipart.max-file-size=10MB
+spring.servlet.multipart.max-request-size=10MB
+spring.servlet.multipart.enabled=true
+```
+
+## REST Endpoint Examples (Template)
+> Add to `NotificationController` (adapt as needed)
 ```java
 @RestController
 @RequestMapping("/api/notifications")
@@ -169,41 +333,130 @@ public class NotificationController {
 }
 ```
 
-## Kodstil & konventioner
-- Paketstruktur enligt ovan.
-- DTOs endast för in/ut ur kontroller.
-- Services för affärslogik; Repositories för DB.
-- Exception-hantering med `@ControllerAdvice` (lägg till vid behov).
-- Loggning med korrelations-ID (`requestId`, `eventId`) där det är relevant.
+## Code Style & Conventions
+- Package structure as shown above.
+- DTOs only for input/output from controllers.
+- Services for business logic; Repositories for DB.
+- Exception handling with `@ControllerAdvice` (add as needed).
+- Logging with correlation IDs (`requestId`, `eventId`) where relevant.
 
-## Arbetsflöde (issue → branch → PR → merge)
-1. Skapa **Issue** i GitHub för user storyn.
-2. Skapa branch från `main`: `feature/readme-dokumentation-#<issueNr>`
-3. Uppdatera/skriv `README.md` (denna fil).
-4. Commit & push (se kommandon nedan).
-5. Skapa **Pull Request** och länka issue (`Closes #<issueNr>`).
-6. Få review, säkerställ grön CI, **Squash & merge**.
+## Workflow (issue → branch → PR → merge)
+1. Create **Issue** in GitHub for the user story.
+2. Create branch from `main`: `feature/readme-documentation-#<issueNr>`
+3. Update/write `README.md` (this file).
+4. Commit & push (see commands below).
+5. Create **Pull Request** and link issue (`Closes #<issueNr>`).
+6. Get review, ensure green CI, **Squash & merge**.
 
-### Git-kommandon
+### Git Commands
 ```bash
-# Skapa branch (ersätt <issueNr>)
-git checkout -b feature/readme-dokumentation-#<issueNr>
+# Create branch (replace <issueNr>)
+git checkout -b feature/readme-documentation-#<issueNr>
 
-# Lägg till README och committa
+# Add README and commit
 git add README.md
-git commit -m "docs(readme): lägg till/uppdatera projekt-README (#<issueNr>)"
+git commit -m "docs(readme): add/update project README (#<issueNr>)"
 
-# Pusha branchen
-git push -u origin feature/readme-dokumentation-#<issueNr>
+# Push branch
+git push -u origin feature/readme-documentation-#<issueNr>
 ```
 
-## PR-checklista (Definition of Done för denna user story)
-- [ ] README beskriver **hur man kör** lokalt (kommandon).
-- [ ] README beskriver **projektstruktur** (paket, viktiga klasser).
-- [ ] README visar **exempel-endpoints** eller länkar till OpenAPI.
-- [ ] README listar **konfiguration** (port, DB, profiler) eller hänvisar.
-- [ ] Stavning/format OK; rubriker och kodblock fungerar i GitHub.
-- [ ] PR-texten länkar issue: `Closes #<issueNr>`.
+## PR Checklist (Definition of Done for this user story)
+- [ ] README describes **how to run** locally (commands).
+- [ ] README describes **project structure** (packages, key classes).
+- [ ] README shows **example endpoints** or links to OpenAPI.
+- [ ] README lists **configuration** (port, DB, profiles) or references it.
+- [ ] Spelling/formatting OK; headers and code blocks work on GitHub.
+- [ ] PR text links issue: `Closes #<issueNr>`.
 
-## Licens
+## Testing
+
+### Unit Tests
+
+```bash
+# Run all tests
+./mvnw test
+
+# Run specific test class
+./mvnw test -Dtest=FileServiceTest
+```
+
+All 7 file service tests should pass:
+- File upload
+- File replacement
+- File deletion
+- File retrieval
+- Error handling
+
+### Integration Tests
+
+For comprehensive API testing with Postman, see the **"Testing Guide for Postman"** section under **File Upload Feature** above.
+
+## Technology Stack
+
+- **Java 21**
+- **Spring Boot 3.5.7**
+- **PostgreSQL 16**
+- **Maven**
+- **Docker & Docker Compose**
+- **AWS SDK** (SES, SQS, SNS)
+
+## .NET Integration
+
+This API is designed to work with the ZoPlanner .NET service for consultant image uploads.
+
+**In your .NET appsettings.json:**
+```json
+{
+  "SpringApi": {
+    "BaseUrl": "http://localhost:8082"
+  }
+}
+```
+
+**Example .NET usage:**
+```csharp
+// Upload consultant image
+await _fileService.UploadAsync(stream, fileName, contentType);
+
+// This calls POST http://localhost:8082/files
+```
+
+The .NET service successfully integrates with this Spring Boot API for handling consultant image uploads.
+
+## Troubleshooting
+
+### Service won't start
+
+```bash
+# Check logs
+docker-compose logs notification-service
+
+# Restart
+docker-compose restart notification-service
+```
+
+### Database connection failed
+
+```bash
+# Verify database is running
+docker ps
+
+# Check database health
+docker exec zoplanner-database psql -U postgres -c "SELECT 1"
+```
+
+### File upload fails
+
+```bash
+# Check uploaded files in database
+docker exec zoplanner-database psql -U postgres -d zoplanner -c "SELECT id, file_name, size FROM files;"
+
+# View application logs
+docker logs notification-service --tail 50
+```
+
+## License
+
+Internal ZoPlanner project
 
