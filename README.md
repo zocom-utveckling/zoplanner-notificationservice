@@ -159,6 +159,34 @@ src/
 
 ## File Upload Feature (Consultant Images)
 
+### Overview of Core Functions
+
+**FileService - 4 main functions:**
+
+- **uploadFile(MultipartFile file)**
+  - Receives a file via MultipartFile
+  - Extracts metadata (name, type, size) and binary data
+  - Saves to database via FileRepository
+  - Returns FileResponse with ID and URL
+
+- **replaceFile(Integer id, MultipartFile file)**
+  - Finds existing file by ID
+  - Throws FileNotFoundException if ID doesn't exist
+  - Updates all field data with new file
+  - Returns updated FileResponse
+
+- **deleteFile(Integer id)**
+  - Checks that the file exists
+  - Throws FileNotFoundException if ID doesn't exist
+  - Removes the file from the database
+  - Returns nothing (void)
+
+- **getFile(Integer id)**
+  - Retrieves file from database by ID
+  - Throws FileNotFoundException if ID doesn't exist
+  - Returns complete FileEntity with binary data
+  - Used by controller to download files
+
 ### API Endpoints
 
 | Method | Endpoint | Description |
@@ -168,24 +196,91 @@ src/
 | PUT | `/files/{id}` | Replace an existing file |
 | DELETE | `/files/{id}` | Delete a file |
 
-### Quick Test
+### Testing Guide for Postman
 
-```bash
-# Upload a file
-curl -X POST http://localhost:8082/files -F "file=@your-image.jpg"
-
-# Expected response:
-# {
-#   "id": 1,
-#   "url": "/files/1",
-#   "fileName": "your-image.jpg",
-#   "size": 123456
-# }
+#### Test 1: Upload File
+- **Method:** `POST`
+- **URL:** `http://localhost:8082/files`
+- **Body:** 
+  - Select `form-data`
+  - Key: `file` (change type to `File` via dropdown)
+  - Value: Select a file from your computer
+- **Click:** Send
+- **Expected response:**
+```json
+{
+  "id": 1,
+  "url": "/files/1",
+  "fileName": "your-file.pdf",
+  "size": 12345
+}
 ```
 
-### Testing with Postman
+#### Test 2: Retrieve/Download File
+- **Method:** `GET`
+- **URL:** `http://localhost:8082/files/1`
+- **Body:** (no body needed)
+- **Click:** Send
+- **Expected:** File downloads or displays in Postman
 
-Import `ZoPlanner-File-Upload.postman_collection.json` and see `POSTMAN_TESTING_GUIDE.md` for detailed instructions.
+#### Test 3: Replace File
+- **Method:** `PUT`
+- **URL:** `http://localhost:8082/files/1`
+- **Body:**
+  - Select `form-data`
+  - Key: `file` (type `File`)
+  - Value: Select a new/different file
+- **Click:** Send
+- **Expected response:**
+```json
+{
+  "id": 1,
+  "url": "/files/1",
+  "fileName": "updated-file.pdf",
+  "size": 54321
+}
+```
+
+#### Test 4: Delete File
+- **Method:** `DELETE`
+- **URL:** `http://localhost:8082/files/1`
+- **Body:** (no body needed)
+- **Click:** Send
+- **Expected response:**
+```json
+{
+  "status": "success",
+  "message": "File with ID 1 has been successfully deleted",
+  "deleteFieldId": "1"
+}
+```
+
+#### Test 5: Error Handling - File Not Found
+- **Method:** `GET` (or `PUT`/`DELETE`)
+- **URL:** `http://localhost:8082/files/999`
+- **Click:** Send
+- **Expected:** HTTP 404 with error message
+```json
+{
+  "timestamp": "2026-03-10T...",
+  "status": 404,
+  "error": "Not Found",
+  "message": "File not found with id: 999"
+}
+```
+
+**Tip:** Save the ID from the upload response to use in subsequent tests.
+
+#### Verification Checklist
+- ✅ File uploads and returns correct metadata
+- ✅ Downloaded file matches uploaded file
+- ✅ File replacement updates the content
+- ✅ File deletion removes the record from database
+- ✅ Operations on non-existent files return 404
+- ✅ Check database to verify records are created/updated/deleted
+- ✅ Check application logs for info/error messages
+- ✅ Test with different file types (PDF, images, text)
+- ✅ Verify that `createdAt` and `updatedAt` timestamps are set correctly
 
 ### Database Schema
 
