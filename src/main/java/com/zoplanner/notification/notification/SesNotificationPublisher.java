@@ -4,6 +4,7 @@ import com.zoplanner.notification.event.ScheduleUpdateEvent;
 import com.zoplanner.notification.event.directmessage.DirectMessageEvent;
 import com.zoplanner.notification.event.newassignment.NewAssignmentEvent;
 import com.zoplanner.notification.notification.email.EmailTemplateService;
+import com.zoplanner.notification.event.schedulecalendar.ScheduleCalendarEvent;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -174,4 +175,26 @@ public class SesNotificationPublisher implements NotificationPublisher {
     private String safe(String s) {
         return (s == null || s.isBlank()) ? "-" : s;
     }
+
+    @Override
+    public void publishScheduleCalendar(ScheduleCalendarEvent event) {
+        requireFromEmail();
+
+        String recipient = safe(event.recipientEmail());
+        if (recipient.equals("-")) {
+            log.warn("Missing recipientEmail on SCHEDULE_CALENDAR event. Not sending. event={}", event);
+            return;
+        }
+
+        String subject = "Ditt schema";
+        String htmlBody = templateService.renderScheduleCalendarHtml(event);
+        String textBody = templateService.renderScheduleCalendarText(event);
+
+        SendEmailResponse response = sendEmail(recipient, subject, htmlBody, textBody);
+        log.info("Sent SCHEDULE_CALENDAR email via SES, messageId={} to={} from={}",
+                response.messageId(), recipient, fromEmail);
+    }
+
+
+
 }

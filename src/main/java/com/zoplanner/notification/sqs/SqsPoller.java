@@ -6,6 +6,7 @@ import com.zoplanner.notification.event.ScheduleUpdateEvent;
 import com.zoplanner.notification.event.newassignment.NewAssignmentEvent;
 import com.zoplanner.notification.notification.NotificationPublisher;
 import com.zoplanner.notification.event.directmessage.DirectMessageEvent;
+import com.zoplanner.notification.event.schedulecalendar.ScheduleCalendarEvent;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -144,6 +145,18 @@ public class SqsPoller {
                             safe(event.subject()));
 
                     notificationPublisher.publishDirectMessage(event);
+                    deleteMessage(message);
+                }
+
+                case "SCHEDULE_CALENDAR", "SCHEDULE_EXPORT" -> {
+                    ScheduleCalendarEvent event = objectMapper.readValue(payloadJson, ScheduleCalendarEvent.class);
+
+                    log.info("Handling SCHEDULE_CALENDAR messageId={} to={} teacher={}",
+                            message.messageId(),
+                            safe(event.recipientEmail()),
+                            safe(event.teacherName()));
+
+                    notificationPublisher.publishScheduleCalendar(event);
                     deleteMessage(message);
                 }
 

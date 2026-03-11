@@ -3,6 +3,8 @@ package com.zoplanner.notification.notification.email;
 import com.zoplanner.notification.event.ScheduleUpdateEvent;
 import com.zoplanner.notification.event.newassignment.NewAssignmentEvent;
 import com.zoplanner.notification.event.directmessage.DirectMessageEvent;
+import com.zoplanner.notification.event.schedulecalendar.ScheduleCalendarEvent;
+import com.zoplanner.notification.event.schedulecalendar.ScheduleCalendarDay;
 import org.springframework.stereotype.Service;
 import org.springframework.core.io.ClassPathResource;
 import java.nio.charset.StandardCharsets;
@@ -126,5 +128,56 @@ public class EmailTemplateService {
                 safe(e.message())
         );
     }
+
+    public String renderScheduleCalendarHtml(ScheduleCalendarEvent e) {
+        String html = loadTemplate("email/schedule-event.html");
+
+        html = html
+                .replace("{{monthTitle}}", safe(e.monthTitle()))
+                .replace("{{weekRange}}", safe(e.weekRange()))
+                .replace("{{teacherName}}", safe(e.teacherName()))
+                .replace("{{ctaUrl}}", "https://zoplanner.com");
+
+        for (int i = 0; i < 31; i++) {
+            String placeholder = "{{day" + (i + 1) + "}}";
+            String value = "";
+
+            if (e.days() != null && i < e.days().size() && e.days().get(i) != null) {
+                value = buildCalendarCell(e.days().get(i));
+            }
+            html = html.replace(placeholder, value);
+        }
+        return html;
+    }
+
+    private String buildCalendarCell(ScheduleCalendarDay day) {
+        return """
+            <div style="font-size:13px; font-weight:700; color:#111827; margin-bottom:6px;">%s</div>
+            %s
+            """.formatted(
+                safe(day.dayNumber()),
+                safeHtml(day.contentHtml())
+        );
+    }
+
+    public String renderScheduleCalendarText(ScheduleCalendarEvent e) {
+        return """
+                Schema från ZoPlanner
+                
+                Lärare: %s
+                Period: %s
+                
+                Öppna ZoPlanner för att se hela schemat:
+                https://zoplanner.com
+                """.formatted(
+                        safe(e.teacherName()),
+                        safe(e.monthTitle())
+        );
+    }
+
+    private String safeHtml(String s) {
+        return (s == null || s.isBlank()) ? "" : s;
+    }
+
 
 }

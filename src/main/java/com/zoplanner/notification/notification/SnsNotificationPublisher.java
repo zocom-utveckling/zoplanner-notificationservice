@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.zoplanner.notification.event.ScheduleUpdateEvent;
 import com.zoplanner.notification.event.newassignment.NewAssignmentEvent;
 import com.zoplanner.notification.event.directmessage.DirectMessageEvent;
+import com.zoplanner.notification.event.schedulecalendar.ScheduleCalendarEvent;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -123,6 +124,13 @@ public class SnsNotificationPublisher implements NotificationPublisher {
     @Override
     public void publishDirectMessage(DirectMessageEvent event) {
         log.warn("DIRECT_MESSAGE not supported by SNS publisher (use SES). eventId={} to={}",
+                event.eventId(),
+                safe(event.recipientEmail()));
+    }
+
+    @Override
+    public void publishScheduleCalendar(ScheduleCalendarEvent event) {
+        log.warn("PUBLISH_SCHEDULE not supported by SNS publisher (use SES). eventId={} to={}",
                 event.eventId(),
                 safe(event.recipientEmail()));
     }
