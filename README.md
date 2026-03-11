@@ -133,175 +133,23 @@ src/
      │   │   └── AwsSnsConfig.java
      │   ├── controller/
      │   │   ├── NotificationController.java
-     │   │   ├── EmailController.java
-     │   │   └── FileController.java
+     │   │   └── EmailController.java
      │   ├── dto/
      │   │   ├── NotificationDTO.java
-     │   │   ├── EmailRequest.java
-     │   │   └── FileResponse.java
+     │   │   └── EmailRequest.java
      │   ├── model/
-     │   │   ├── Notification.java
-     │   │   └── FileEntity.java
+     │   │   └── Notification.java
      │   ├── repository/
-     │   │   ├── NotificationRepository.java
-     │   │   └── FileRepository.java
+     │   │   └── NotificationRepository.java
      │   ├── service/
      │   │   ├── NotificationService.java
-     │   │   ├── EmailService.java
-     │   │   └── FileService.java
+     │   │   └── EmailService.java
      │   └── exception/
-     │       ├── GlobalExceptionHandler.java
-     │       ├── FileNotFoundException.java
-     │       └── FileStorageException.java
+     │       └── GlobalExceptionHandler.java
      └── resources/
          └── application.properties
 ```
 
-## File Upload Feature (Consultant Images)
-
-### Overview of Core Functions
-
-**FileService - 4 main functions:**
-
-- **uploadFile(MultipartFile file)**
-  - Receives a file via MultipartFile
-  - Extracts metadata (name, type, size) and binary data
-  - Saves to database via FileRepository
-  - Returns FileResponse with ID and URL
-
-- **replaceFile(Integer id, MultipartFile file)**
-  - Finds existing file by ID
-  - Throws FileNotFoundException if ID doesn't exist
-  - Updates all field data with new file
-  - Returns updated FileResponse
-
-- **deleteFile(Integer id)**
-  - Checks that the file exists
-  - Throws FileNotFoundException if ID doesn't exist
-  - Removes the file from the database
-  - Returns nothing (void)
-
-- **getFile(Integer id)**
-  - Retrieves file from database by ID
-  - Throws FileNotFoundException if ID doesn't exist
-  - Returns complete FileEntity with binary data
-  - Used by controller to download files
-
-### API Endpoints
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/files` | Upload a new file |
-| GET | `/files/{id}` | Download a file |
-| PUT | `/files/{id}` | Replace an existing file |
-| DELETE | `/files/{id}` | Delete a file |
-
-### Testing Guide for Postman
-
-#### Test 1: Upload File
-- **Method:** `POST`
-- **URL:** `http://localhost:8082/files`
-- **Body:** 
-  - Select `form-data`
-  - Key: `file` (change type to `File` via dropdown)
-  - Value: Select a file from your computer
-- **Click:** Send
-- **Expected response:**
-```json
-{
-  "id": 1,
-  "url": "/files/1",
-  "fileName": "your-file.pdf",
-  "size": 12345
-}
-```
-
-#### Test 2: Retrieve/Download File
-- **Method:** `GET`
-- **URL:** `http://localhost:8082/files/1`
-- **Body:** (no body needed)
-- **Click:** Send
-- **Expected:** File downloads or displays in Postman
-
-#### Test 3: Replace File
-- **Method:** `PUT`
-- **URL:** `http://localhost:8082/files/1`
-- **Body:**
-  - Select `form-data`
-  - Key: `file` (type `File`)
-  - Value: Select a new/different file
-- **Click:** Send
-- **Expected response:**
-```json
-{
-  "id": 1,
-  "url": "/files/1",
-  "fileName": "updated-file.pdf",
-  "size": 54321
-}
-```
-
-#### Test 4: Delete File
-- **Method:** `DELETE`
-- **URL:** `http://localhost:8082/files/1`
-- **Body:** (no body needed)
-- **Click:** Send
-- **Expected response:**
-```json
-{
-  "status": "success",
-  "message": "File with ID 1 has been successfully deleted",
-  "deleteFieldId": "1"
-}
-```
-
-#### Test 5: Error Handling - File Not Found
-- **Method:** `GET` (or `PUT`/`DELETE`)
-- **URL:** `http://localhost:8082/files/999`
-- **Click:** Send
-- **Expected:** HTTP 404 with error message
-```json
-{
-  "timestamp": "2026-03-10T...",
-  "status": 404,
-  "error": "Not Found",
-  "message": "File not found with id: 999"
-}
-```
-
-**Tip:** Save the ID from the upload response to use in subsequent tests.
-
-#### Verification Checklist
-- ✅ File uploads and returns correct metadata
-- ✅ Downloaded file matches uploaded file
-- ✅ File replacement updates the content
-- ✅ File deletion removes the record from database
-- ✅ Operations on non-existent files return 404
-- ✅ Check database to verify records are created/updated/deleted
-- ✅ Check application logs for info/error messages
-- ✅ Test with different file types (PDF, images, text)
-- ✅ Verify that `createdAt` and `updatedAt` timestamps are set correctly
-
-### Database Schema
-
-Files are stored in the `files` table:
-- `id` - Auto-generated primary key
-- `file_name` - Original filename
-- `content_type` - MIME type (e.g., image/jpeg)
-- `size` - File size in bytes
-- `data` - Binary file data (BYTEA)
-- `created_at` - Upload timestamp
-- `updated_at` - Last update timestamp
-
-### Configuration
-
-Maximum file size: **10MB** (configurable in `application.properties`)
-
-```properties
-spring.servlet.multipart.max-file-size=10MB
-spring.servlet.multipart.max-request-size=10MB
-spring.servlet.multipart.enabled=true
-```
 
 ## REST Endpoint Examples (Template)
 > Add to `NotificationController` (adapt as needed)
@@ -376,21 +224,11 @@ git push -u origin feature/readme-documentation-#<issueNr>
 ```bash
 # Run all tests
 ./mvnw test
-
-# Run specific test class
-./mvnw test -Dtest=FileServiceTest
 ```
-
-All 7 file service tests should pass:
-- File upload
-- File replacement
-- File deletion
-- File retrieval
-- Error handling
 
 ### Integration Tests
 
-For comprehensive API testing with Postman, see the **"Testing Guide for Postman"** section under **File Upload Feature** above.
+Complete API testing guide available for notification and email endpoints.
 
 ## Technology Stack
 
@@ -401,28 +239,6 @@ For comprehensive API testing with Postman, see the **"Testing Guide for Postman
 - **Docker & Docker Compose**
 - **AWS SDK** (SES, SQS, SNS)
 
-## .NET Integration
-
-This API is designed to work with the ZoPlanner .NET service for consultant image uploads.
-
-**In your .NET appsettings.json:**
-```json
-{
-  "SpringApi": {
-    "BaseUrl": "http://localhost:8082"
-  }
-}
-```
-
-**Example .NET usage:**
-```csharp
-// Upload consultant image
-await _fileService.UploadAsync(stream, fileName, contentType);
-
-// This calls POST http://localhost:8082/files
-```
-
-The .NET service successfully integrates with this Spring Boot API for handling consultant image uploads.
 
 ## Troubleshooting
 
@@ -446,15 +262,6 @@ docker ps
 docker exec zoplanner-database psql -U postgres -c "SELECT 1"
 ```
 
-### File upload fails
-
-```bash
-# Check uploaded files in database
-docker exec zoplanner-database psql -U postgres -d zoplanner -c "SELECT id, file_name, size FROM files;"
-
-# View application logs
-docker logs notification-service --tail 50
-```
 
 ## License
 
