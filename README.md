@@ -1,4 +1,5 @@
 # Notification Service
+[![Java CI/CD](https://github.com/zocom-utveckling/zoplanner-notificationservice/actions/workflows/ci-cd.yml/badge.svg)](https://github.com/zocom-utveckling/zoplanner-notificationservice/actions/workflows/ci-cd.yml)
 
 A Spring Boot-based notification service (Java) for sending and managing notifications.
 This README was created for the user story: **"As a developer, I want well-documented code in a README so that others can build upon it in the future."**
