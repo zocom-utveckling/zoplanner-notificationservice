@@ -54,20 +54,19 @@ public class EmailTemplateService {
 
     }
     public String renderScheduleUpdatedText(ScheduleUpdateEvent s) {
-
         return """
-            Schedule updated
+        Schedule updated
 
-            Teacher: %s
-            Time: %s
-            Changes: %s
-            Message: %s
+        Teacher: %s
+        Time: %s
+        Changes: %s
+        Message: %s
 
-            ZoPlanner: https://zoplanner.com
-            """.formatted(
+        ZoPlanner: https://zoplanner.com
+        """.formatted(
                 safe(s.getTeacherEmail()),
                 safe(s.getEventTime() != null ? s.getEventTime().toString() : "-"),
-                safe(s.getChanges().toString()),
+                safe(s.getChanges() != null ? s.getChanges().toString() : "-"),
                 safe(s.getMessage())
         );
     }

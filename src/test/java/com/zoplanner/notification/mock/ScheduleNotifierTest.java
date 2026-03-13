@@ -94,7 +94,7 @@ public class ScheduleNotifierTest {
         event.setSource("SCHEDULE_SERVICE");
         event.setPreference(NotificationPreference.PER_JOB_24H);
         event.setEventTime(jobTime);
-        event.setCreatedAt(LocalDateTime.now());
+        event.setCreatedAt(Instant.now());
         event.setChanges(Collections.emptyList());
 
         consumer.handleMessage(event);
@@ -117,7 +117,7 @@ public class ScheduleNotifierTest {
         event.setSource("SCHEDULE_SERVICE");
         event.setPreference(NotificationPreference.WEEKLY_SUMMARY);
         event.setEventTime(Instant.now().plusSeconds(3600));
-        event.setCreatedAt(LocalDateTime.now());
+        event.setCreatedAt(Instant.now());
         event.setChanges(Collections.emptyList());
 
         // Act
