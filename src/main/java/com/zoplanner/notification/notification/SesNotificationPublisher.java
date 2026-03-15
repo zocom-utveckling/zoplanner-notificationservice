@@ -1,6 +1,7 @@
 package com.zoplanner.notification.notification;
 
 import com.zoplanner.notification.event.ScheduleUpdateEvent;
+import com.zoplanner.notification.event.deleteevent.DeleteEvent;
 import com.zoplanner.notification.event.directmessage.DirectMessageEvent;
 import com.zoplanner.notification.event.newassignment.NewAssignmentEvent;
 import com.zoplanner.notification.notification.email.EmailTemplateService;
@@ -193,6 +194,33 @@ public class SesNotificationPublisher implements NotificationPublisher {
         SendEmailResponse response = sendEmail(recipient, subject, htmlBody, textBody);
         log.info("Sent SCHEDULE_CALENDAR email via SES, messageId={} to={} from={}",
                 response.messageId(), recipient, fromEmail);
+    }
+
+    @Override
+    public void publishAssignmentDeleted(DeleteEvent event) {
+
+        requireFromEmail();
+
+        String recipient = safe(event.teacherEmail());
+
+        if (recipient.equals("-")) {
+            log.warn("Missing teacherEmail on ASSIGNMENT_DELETED event. Not publishing to SES. event={}", event);
+            return;
+        }
+
+        String subject = safe("Uppdrag raderat");
+
+        String htmlBody = templateService.renderAssignmentDeletedHtml(event);
+        String textBody = templateService.renderAssignmentDeletedText(event);
+
+        SendEmailResponse response = sendEmail(recipient, subject, htmlBody, textBody);
+
+        log.info(
+                "Sent ASSIGNMENT_DELETED email via SES, messageId={} to={} from={}",
+                response.messageId(),
+                recipient,
+                fromEmail
+        );
     }
 
 

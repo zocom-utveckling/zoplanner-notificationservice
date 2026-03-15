@@ -4,6 +4,7 @@ package com.zoplanner.notification.notification;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.zoplanner.notification.event.ScheduleUpdateEvent;
+import com.zoplanner.notification.event.deleteevent.DeleteEvent;
 import com.zoplanner.notification.event.newassignment.NewAssignmentEvent;
 import com.zoplanner.notification.event.directmessage.DirectMessageEvent;
 import com.zoplanner.notification.event.schedulecalendar.ScheduleCalendarEvent;
@@ -133,6 +134,13 @@ public class SnsNotificationPublisher implements NotificationPublisher {
         log.warn("PUBLISH_SCHEDULE not supported by SNS publisher (use SES). eventId={} to={}",
                 event.eventId(),
                 safe(event.recipientEmail()));
+    }
+
+    @Override
+    public void publishAssignmentDeleted(DeleteEvent event) {
+        log.warn("ASSIGNMENT_DELETED not supported by SNS publisher (use SES). eventId={} to={}",
+                event.eventId(),
+                safe(event.teacherEmail()));
     }
 
     @SuppressWarnings("unused")

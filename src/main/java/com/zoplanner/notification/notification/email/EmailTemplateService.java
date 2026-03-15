@@ -1,6 +1,7 @@
 package com.zoplanner.notification.notification.email;
 
 import com.zoplanner.notification.event.ScheduleUpdateEvent;
+import com.zoplanner.notification.event.deleteevent.DeleteEvent;
 import com.zoplanner.notification.event.newassignment.NewAssignmentEvent;
 import com.zoplanner.notification.event.directmessage.DirectMessageEvent;
 import com.zoplanner.notification.event.schedulecalendar.ScheduleCalendarEvent;
@@ -174,6 +175,41 @@ public class EmailTemplateService {
                         safe(e.monthTitle())
         );
     }
+
+    public String renderAssignmentDeletedHtml(DeleteEvent e){
+
+        String html = loadTemplate("email/assignment-deleted.html");
+
+
+        String subject = "Ett uppdrag har raderats";
+
+        String message = "Uppgiften \"" + safe(e.assignmentDescription()) +
+                "\" har raderats från ZoPlanner.";
+
+        return html
+                .replace("{{subject}}", subject)
+                .replace("{{message}}", message)
+                .replace("{{ctaUrl}}", "https://zoplanner.com");
+    }
+
+    public String renderAssignmentDeletedText(DeleteEvent e){
+
+        return """
+            En uppgift har raderats.
+
+            Lärare: %s
+            Uppgift: %s
+            Tid: %s
+
+            Öppna ZoPlanner:
+            https://zoplanner.com
+            """.formatted(
+                safe(e.teacherEmail()),
+                safe(e.assignmentDescription()),
+                safe(e.timestamp() != null ? e.timestamp().toString() : "-")
+        );
+    }
+
 
     private String safeHtml(String s) {
         return (s == null || s.isBlank()) ? "" : s;
