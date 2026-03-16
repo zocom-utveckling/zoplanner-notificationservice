@@ -50,7 +50,7 @@ public class NotificationFlowTest {
         perJobEvent.setTeacherEmail("teacher1@example.com");
         perJobEvent.setEventTime(Instant.now().plusSeconds(3600 * 25));
         perJobEvent.setPreference(NotificationPreference.PER_JOB_24H);
-        perJobEvent.setCreatedAt(LocalDateTime.now());
+        perJobEvent.setCreatedAt(Instant.now());
         perJobEvent.setChanges(Collections.emptyList());
 
         // Flera events för weekly summary

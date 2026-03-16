@@ -20,7 +20,7 @@ public class ScheduleUpdateEvent {
     @JsonAlias({"eventTime","EventTime"})
     private Instant eventTime;
     @JsonAlias({"createdAt","CreatedAt"})
-    private LocalDateTime createdAt;
+    private Instant createdAt;
     @JsonAlias({"changes","Changes"})
     private List<ScheduleChange> changes;
     @JsonAlias({"preference","Preference"})
@@ -32,7 +32,7 @@ public class ScheduleUpdateEvent {
     }
 
     public ScheduleUpdateEvent(String teacherId, String teacherEmail, String source,
-                               LocalDateTime createdAt, List<ScheduleChange> changes, NotificationPreference preference,
+                               Instant createdAt, List<ScheduleChange> changes, NotificationPreference preference,
                                Instant eventTime, String message) {
         this.teacherId = teacherId;
         this.teacherEmail = teacherEmail;
@@ -56,7 +56,7 @@ public class ScheduleUpdateEvent {
         return source;
     }
 
-    public LocalDateTime getCreatedAt() {
+    public Instant getCreatedAt() {
         return createdAt;
     }
 
@@ -76,7 +76,7 @@ public class ScheduleUpdateEvent {
         this.source = source;
     }
 
-    public void setCreatedAt(LocalDateTime createdAt) {
+    public void setCreatedAt(Instant createdAt) {
         this.createdAt = createdAt;
     }
 
