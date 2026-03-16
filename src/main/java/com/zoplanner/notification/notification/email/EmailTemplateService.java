@@ -130,7 +130,11 @@ public class EmailTemplateService {
     }
 
     public String renderScheduleCalendarHtml(ScheduleCalendarEvent e) {
-        String html = loadTemplate("email/schedule-event.html");
+        boolean weeklyView = isWeeklyView(e);
+
+        String html = loadTemplate(
+                weeklyView ? "email/schedule-week.html" : "email/schedule-event.html"
+        );
 
         html = html
                 .replace("{{monthTitle}}", safe(e.monthTitle()))
@@ -138,7 +142,9 @@ public class EmailTemplateService {
                 .replace("{{teacherName}}", safe(e.teacherName()))
                 .replace("{{ctaUrl}}", "https://zoplanner.com");
 
-        for (int i = 0; i < 31; i++) {
+        int maxDays = weeklyView ? 7 : 31;
+
+        for (int i = 0; i < maxDays; i++) {
             String placeholder = "{{day" + (i + 1) + "}}";
             String value = "";
 
@@ -150,17 +156,23 @@ public class EmailTemplateService {
         return html;
     }
 
+    private boolean isWeeklyView(ScheduleCalendarEvent e) {
+        return e.weekRange() != null && !e.weekRange().isBlank()
+                && (e.monthTitle() == null || e.monthTitle().isBlank());
+    }
+
     private String buildCalendarCell(ScheduleCalendarDay day) {
         return """
-            <div style="font-size:13px; font-weight:700; color:#111827; margin-bottom:6px;">%s</div>
-            %s
-            """.formatted(
+        <div style="font-size:13px; font-weight:700; color:#111827; margin-bottom:6px;">%s</div>
+        %s
+        """.formatted(
                 safe(day.dayNumber()),
                 safeHtml(day.contentHtml())
         );
     }
 
     public String renderScheduleCalendarText(ScheduleCalendarEvent e) {
+        String period = isWeeklyView(e) ? e.weekRange() : e.monthTitle();
         return """
                 Schema från ZoPlanner
                 
@@ -171,7 +183,7 @@ public class EmailTemplateService {
                 https://zoplanner.com
                 """.formatted(
                         safe(e.teacherName()),
-                        safe(e.monthTitle())
+                        safe(period)
         );
     }
 
