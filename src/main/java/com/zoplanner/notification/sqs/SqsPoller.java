@@ -3,6 +3,7 @@ package com.zoplanner.notification.sqs;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.zoplanner.notification.event.BaseEvent;
 import com.zoplanner.notification.event.ScheduleUpdateEvent;
+import com.zoplanner.notification.event.deleteevent.DeleteEvent;
 import com.zoplanner.notification.event.newassignment.NewAssignmentEvent;
 import com.zoplanner.notification.notification.NotificationPublisher;
 import com.zoplanner.notification.event.directmessage.DirectMessageEvent;
@@ -157,6 +158,20 @@ public class SqsPoller {
                             safe(event.teacherName()));
 
                     notificationPublisher.publishScheduleCalendar(event);
+                    deleteMessage(message);
+                }
+
+                case "ASSIGNMENT_DELETED", "ASSIGNMENT_DELETE" -> {
+
+                    DeleteEvent event =
+                            objectMapper.readValue(payloadJson, DeleteEvent.class);
+
+                    log.info("Handling ASSIGNMENT_DELETED messageId={} eventId={}",
+                            message.messageId(),
+                            safe(String.valueOf(event.eventId())));
+
+                    notificationPublisher.publishAssignmentDeleted(event);
+
                     deleteMessage(message);
                 }
 

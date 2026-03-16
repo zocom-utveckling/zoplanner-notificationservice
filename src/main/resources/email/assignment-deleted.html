@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="sv">
+<body style="margin:0;padding:0;background:#f3f4f6;">
+<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#f3f4f6;padding:24px 0;">
+    <tr>
+        <td align="center">
+
+            <table role="presentation" width="600" cellspacing="0" cellpadding="0" style="width:600px;max-width:600px;">
+                <!-- Brand -->
+                <tr>
+                    <td style="font-family:Segoe UI, Roboto, Arial, sans-serif;padding:0 16px 12px 16px;color:#111827;">
+                        <div style="font-size:20px;font-weight:700;">ZoPlanner</div>
+                        <div style="font-size:12px;color:#6b7280;">Notifikationer</div>
+                    </td>
+                </tr>
+
+                <!-- Card -->
+                <tr>
+                    <td style="background:#ffffff;border:1px solid #e5e7eb;border-radius:12px;padding:20px;font-family:Segoe UI, Roboto, Arial, sans-serif;color:#111827;">
+                        <div style="font-size:18px;font-weight:700;margin:0 0 8px 0;">{{subject}}</div>
+                        <div style="font-size:14px;line-height:20px;color:#374151;margin:0 0 14px 0;">
+                            Här är detaljerna:
+                        </div>
+
+                        <!-- Key/Value rows -->
+                        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="font-size:14px;color:#111827;">
+
+                            <tr>
+                                <td style="padding:6px 0;color:#6b7280;width:160px;">Meddelande</td>
+                                <td style="padding:6px 0;">{{message}}</td>
+                            </tr>
+
+                        </table>
+
+                        <!-- CTA -->
+                        <table role="presentation" cellspacing="0" cellpadding="0" style="margin-top:18px;">
+                            <tr>
+                                <td style="background:#111827;border-radius:10px;">
+                                    <a href="{{ctaUrl}}"
+                                       style="display:inline-block;padding:12px 16px;font-family:Segoe UI, Roboto, Arial, sans-serif;font-size:14px;color:#ffffff;text-decoration:none;font-weight:600;">
+                                        Öppna i ZoPlanner
+                                    </a>
+                                </td>
+                            </tr>
+                        </table>
+
+                        <div style="margin-top:16px;font-size:12px;color:#6b7280;">
+                            Om knappen inte fungerar, kopiera länken: <span style="color:#111827;">{{ctaUrl}}</span>
+                        </div>
+                    </td>
+                </tr>
+
+                <!-- Footer -->
+                <tr>
+                    <td style="font-family:Segoe UI, Roboto, Arial, sans-serif;padding:12px 16px;color:#6b7280;font-size:12px;">
+                        Du får detta mailet eftersom du har notifieringar aktiverade i ZoPlanner.
+                    </td>
+                </tr>
+            </table>
+
+        </td>
+    </tr>
+</table>
+</body>
+</html>
