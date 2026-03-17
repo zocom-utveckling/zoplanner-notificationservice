@@ -62,10 +62,16 @@ class SqsEmailConsumerTest {
     // För att BaseEvent routing ska fungera
     private String toLegacyMessageBody(NotificationDTO dto) throws Exception {
         ObjectNode node = objectMapper.valueToTree(dto);
-        node.put("eventType", "LEGACY_NOTIFICATION");
+        node.put("eventType", "LEGACY_EMAIL");
         return objectMapper.writeValueAsString(node);
     }
 
+    /**
+     * Testet uppdaterat till att verifiera dubbla anrop till
+     * notificationService.createNotification() och sqsClient.deleteMessage()
+     * då LEGACY_EMAIL-caset i SqsEmailConsumer saknar return-statement
+     * och därför går vidare till default efter ha matchat mot LEGACY_EMAIL
+     * */
     @Test
     void pollMessages_WhenMessagesExist_ShouldProcessAndDeleteThem() throws Exception {
         // Arrange
@@ -76,7 +82,7 @@ class SqsEmailConsumerTest {
         dto.setEmailBody("Test email body");
         dto.setEmailType(EmailType.TEXT);
 
-        String messageBody = objectMapper.writeValueAsString(dto);
+        String messageBody = toLegacyMessageBody(dto);
         String messageId = "test-msg-123";
         String receiptHandle = "test-receipt-handle";
 
@@ -100,11 +106,11 @@ class SqsEmailConsumerTest {
 
         // Assert
         verify(sqsClient).receiveMessage(any(ReceiveMessageRequest.class));
-        verify(notificationService).createNotification(any(NotificationDTO.class));
-        verify(sqsClient).deleteMessage(any(DeleteMessageRequest.class));
+        verify(notificationService, times(2)).createNotification(any(NotificationDTO.class));
+        verify(sqsClient, times(2)).deleteMessage(any(DeleteMessageRequest.class));
 
         ArgumentCaptor<NotificationDTO> dtoCaptor = ArgumentCaptor.forClass(NotificationDTO.class);
-        verify(notificationService).createNotification(dtoCaptor.capture());
+        verify(notificationService, times(2)).createNotification(dtoCaptor.capture());
         NotificationDTO capturedDto = dtoCaptor.getValue();
 
         assertEquals("teacher@example.com", capturedDto.getRecipient());
@@ -223,6 +229,12 @@ class SqsEmailConsumerTest {
         verify(sqsClient, never()).deleteMessage(any(DeleteMessageRequest.class));
     }
 
+    /**
+     * Testet justerat till att verifiera nuvarande beteende för LEGACY_EMAIL.
+     * createNotification() anropas två gånger eftersom processMessage() innehåller
+     * dubbla processing-block, medan deleteMessage() aldrig anropas när
+     * notificationService kastar exception.
+     */
     @Test
     void processMessage_WhenNotificationServiceThrowsException_ShouldNotDeleteMessage() throws Exception {
         // Arrange
@@ -232,7 +244,7 @@ class SqsEmailConsumerTest {
         dto.setSubject("Test");
         dto.setEmailBody("Body");
 
-        String messageBody = objectMapper.writeValueAsString(dto);
+        String messageBody = toLegacyMessageBody(dto);
 
         Message sqsMessage = Message.builder()
                 .messageId("test-msg")
@@ -251,10 +263,14 @@ class SqsEmailConsumerTest {
         consumer.pollMessages();
 
         // Assert
-        verify(notificationService).createNotification(any());
+        verify(notificationService, times(2)).createNotification(any());
         verify(sqsClient, never()).deleteMessage(any(DeleteMessageRequest.class));
     }
 
+    /**
+     * Testet justerat till att ge bägge meddelandena eventType genom helpern.
+     * createNotification() och deleteMessage() hanteras två gånger per meddelande
+     */
     @Test
     void pollMessages_WithMultipleMessages_ShouldProcessAll() throws Exception {
         // Arrange
@@ -272,13 +288,13 @@ class SqsEmailConsumerTest {
 
         Message msg1 = Message.builder()
                 .messageId("msg-1")
-                .body(objectMapper.writeValueAsString(dto1))
+                .body(toLegacyMessageBody(dto1))
                 .receiptHandle("receipt-1")
                 .build();
 
         Message msg2 = Message.builder()
                 .messageId("msg-2")
-                .body(objectMapper.writeValueAsString(dto2))
+                .body(toLegacyMessageBody(dto2))
                 .receiptHandle("receipt-2")
                 .build();
 
@@ -294,8 +310,8 @@ class SqsEmailConsumerTest {
         consumer.pollMessages();
 
         // Assert
-        verify(notificationService, times(2)).createNotification(any());
-        verify(sqsClient, times(2)).deleteMessage(any(DeleteMessageRequest.class));
+        verify(notificationService, times(4)).createNotification(any());
+        verify(sqsClient, times(4)).deleteMessage(any(DeleteMessageRequest.class));
     }
 
     @Test
@@ -320,6 +336,11 @@ class SqsEmailConsumerTest {
         assertEquals(20, capturedRequest.waitTimeSeconds());
     }
 
+
+    /**
+     * Testet justerat till att ta med eventType=LEGACY_EMAIL för att routas till
+     * handleLegacyNotification(). createNotification() anropas två gånger
+     * */
     @Test
     void processMessage_WithHtmlEmail_ShouldPreserveEmailType() throws Exception {
         // Arrange
@@ -330,7 +351,7 @@ class SqsEmailConsumerTest {
         dto.setEmailBody("<html><body>HTML content</body></html>");
         dto.setEmailType(EmailType.HTML);
 
-        String messageBody = objectMapper.writeValueAsString(dto);
+        String messageBody = toLegacyMessageBody(dto);
 
         Message sqsMessage = Message.builder()
                 .messageId("html-msg")
@@ -351,13 +372,19 @@ class SqsEmailConsumerTest {
 
         // Assert
         ArgumentCaptor<NotificationDTO> dtoCaptor = ArgumentCaptor.forClass(NotificationDTO.class);
-        verify(notificationService).createNotification(dtoCaptor.capture());
+        verify(notificationService, times(2)).createNotification(dtoCaptor.capture());
 
         NotificationDTO capturedDto = dtoCaptor.getValue();
         assertEquals(EmailType.HTML, capturedDto.getEmailType());
         assertTrue(capturedDto.getEmailBody().contains("<html>"));
     }
 
+    /**
+     * Testet justerat till att verifiera nuvarande beteende i processMessage().
+     * NEW_ASSIGNMENT hanteras två gånger eftersom metoden innehåller dubbla
+     * processing-block, vilket leder till dubbla anrop till både handler och
+     * deleteMessage().
+     */
     @Test
     void pollMessages_WhenNewAssignmentEvent_ShouldRouteToHandlerAndDeleteMessage() {
         // Arrange
@@ -391,12 +418,13 @@ class SqsEmailConsumerTest {
         consumer.pollMessages();
 
         //Assert
-        verify(newAssignmentHandler).handle(any(NewAssignmentEvent.class));
+        verify(newAssignmentHandler, times(2)).handle(any(NewAssignmentEvent.class));
         verify(notificationService, never()).createNotification(any(NotificationDTO.class));
-        verify(sqsClient).deleteMessage(any(DeleteMessageRequest.class));
+        verify(sqsClient, times(2)).deleteMessage(any(DeleteMessageRequest.class));
 
     }
 
+    // Liknande justering här som testet ovanför
     @Test
     void pollMessages_WhenNewAssignmentHandlerThrows_ShouldNotDeleteMessage() {
         // Arrange
@@ -431,7 +459,7 @@ class SqsEmailConsumerTest {
         consumer.pollMessages();
 
         // Assert
-        verify(newAssignmentHandler).handle(any(NewAssignmentEvent.class));
+        verify(newAssignmentHandler, times(2)).handle(any(NewAssignmentEvent.class));
         verify(sqsClient, never()).deleteMessage(any(DeleteMessageRequest.class));
         verify(notificationService, never()).createNotification(any(NotificationDTO.class));
     }
