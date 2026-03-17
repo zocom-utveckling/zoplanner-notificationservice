@@ -183,7 +183,7 @@ public class SqsPoller {
             }
 
         } catch (Exception e) {
-            log.error("Failed processing SQS messageId={}. Body={}",
+            log.error("Failed processing SQS messageId={}. Body={}. May be retried or moved to DLQ",
                     message.messageId(), rawBody, e);
             // Deletar INTE → SQS räknar som misslyckat försök → hamnar i DLQ efter 3 försök
         }
