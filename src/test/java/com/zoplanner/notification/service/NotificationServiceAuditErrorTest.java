@@ -8,6 +8,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.boot.test.system.CapturedOutput;
 import org.springframework.boot.test.system.OutputCaptureExtension;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(OutputCaptureExtension.class)
@@ -30,11 +31,15 @@ public class NotificationServiceAuditErrorTest {
         dto.setMessage("Hello");
         dto.setRecipient("test@test.com");
 
-        service.createNotification(dto);
+        assertThatThrownBy(() -> service.createNotification(dto))
+                .isInstanceOf(RuntimeException.class)
+                        .hasMessage("File write failed");
 
         assertThat(output).contains("Error creating notification");
         assertThat(output).contains("File write failed");
 
         verify(repo, times(1)).save(any());
+        verify(audit, times(2))
+                .logNotificationSent(anyString(), anyString(), anyString(), anyBoolean());
     }
 }
