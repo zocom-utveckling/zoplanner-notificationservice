@@ -35,6 +35,7 @@ services:
       - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
       - AWS_REGION=${AWS_REGION}
       - SQS_QUEUE_URL=${SQS_QUEUE_URL}
+      - SQS_DLQ_URL=https://sqs.eu-north-1.amazonaws.com/084828590879/zoplanner-notification-dlq
       - AWS_SES_FROM_EMAIL=${AWS_SES_FROM_EMAIL}
       - AWS_SES_FROM_NAME=${AWS_SES_FROM_NAME}
       - SNS_TOPIC_EMAIL_ARN=${SNS_TOPIC_EMAIL_ARN}
