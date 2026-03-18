@@ -187,13 +187,20 @@ public class SesNotificationPublisher implements NotificationPublisher {
             return;
         }
 
-        String subject = "Ditt schema";
+        String subject = isWeeklySchedule(event)
+                ? "Ditt veckoschema"
+                : "Ditt schema";
         String htmlBody = templateService.renderScheduleCalendarHtml(event);
         String textBody = templateService.renderScheduleCalendarText(event);
 
         SendEmailResponse response = sendEmail(recipient, subject, htmlBody, textBody);
         log.info("Sent SCHEDULE_CALENDAR email via SES, messageId={} to={} from={}",
                 response.messageId(), recipient, fromEmail);
+    }
+
+    private boolean isWeeklySchedule(ScheduleCalendarEvent event) {
+        return event.weekRange() != null && !event.weekRange().isBlank()
+                && (event.monthTitle() == null || event.monthTitle().isBlank());
     }
 
     @Override

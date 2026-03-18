@@ -183,11 +183,9 @@ public class SqsPoller {
             }
 
         } catch (Exception e) {
-            // Viktigt: Om det är parse-problem (formatfel) vill vi INTE loopa -> delete
-            // Om du vill vara mer “snäll” kan du differentiera på exception-typ.
-            log.error("Failed processing SQS messageId={} (deleting to avoid retry loop). Body={}",
+            log.error("Failed processing SQS messageId={}. Body={}. May be retried or moved to DLQ",
                     message.messageId(), rawBody, e);
-            deleteMessage(message);
+            // Deletar INTE → SQS räknar som misslyckat försök → hamnar i DLQ efter 3 försök
         }
     }
 
