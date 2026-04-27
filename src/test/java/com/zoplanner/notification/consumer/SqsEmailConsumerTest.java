@@ -106,11 +106,11 @@ class SqsEmailConsumerTest {
 
         // Assert
         verify(sqsClient).receiveMessage(any(ReceiveMessageRequest.class));
-        verify(notificationService, times(2)).createNotification(any(NotificationDTO.class));
-        verify(sqsClient, times(2)).deleteMessage(any(DeleteMessageRequest.class));
+        verify(sqsClient).deleteMessage(any(DeleteMessageRequest.class));
+        verify(notificationService).createNotification(any(NotificationDTO.class));
 
         ArgumentCaptor<NotificationDTO> dtoCaptor = ArgumentCaptor.forClass(NotificationDTO.class);
-        verify(notificationService, times(2)).createNotification(dtoCaptor.capture());
+        verify(notificationService).createNotification(dtoCaptor.capture());
         NotificationDTO capturedDto = dtoCaptor.getValue();
 
         assertEquals("teacher@example.com", capturedDto.getRecipient());
@@ -263,7 +263,7 @@ class SqsEmailConsumerTest {
         consumer.pollMessages();
 
         // Assert
-        verify(notificationService, times(2)).createNotification(any());
+        verify(notificationService).createNotification(any());
         verify(sqsClient, never()).deleteMessage(any(DeleteMessageRequest.class));
     }
 
@@ -310,8 +310,8 @@ class SqsEmailConsumerTest {
         consumer.pollMessages();
 
         // Assert
-        verify(notificationService, times(4)).createNotification(any());
-        verify(sqsClient, times(4)).deleteMessage(any(DeleteMessageRequest.class));
+        verify(notificationService, times(2)).createNotification(any());
+        verify(sqsClient, times(2)).deleteMessage(any(DeleteMessageRequest.class));
     }
 
     @Test
@@ -372,7 +372,7 @@ class SqsEmailConsumerTest {
 
         // Assert
         ArgumentCaptor<NotificationDTO> dtoCaptor = ArgumentCaptor.forClass(NotificationDTO.class);
-        verify(notificationService, times(2)).createNotification(dtoCaptor.capture());
+        verify(notificationService).createNotification(dtoCaptor.capture());
 
         NotificationDTO capturedDto = dtoCaptor.getValue();
         assertEquals(EmailType.HTML, capturedDto.getEmailType());
@@ -418,9 +418,9 @@ class SqsEmailConsumerTest {
         consumer.pollMessages();
 
         //Assert
-        verify(newAssignmentHandler, times(2)).handle(any(NewAssignmentEvent.class));
+        verify(newAssignmentHandler).handle(any(NewAssignmentEvent.class));
         verify(notificationService, never()).createNotification(any(NotificationDTO.class));
-        verify(sqsClient, times(2)).deleteMessage(any(DeleteMessageRequest.class));
+        verify(sqsClient).deleteMessage(any(DeleteMessageRequest.class));
 
     }
 
@@ -459,7 +459,7 @@ class SqsEmailConsumerTest {
         consumer.pollMessages();
 
         // Assert
-        verify(newAssignmentHandler, times(2)).handle(any(NewAssignmentEvent.class));
+        verify(newAssignmentHandler).handle(any(NewAssignmentEvent.class));
         verify(sqsClient, never()).deleteMessage(any(DeleteMessageRequest.class));
         verify(notificationService, never()).createNotification(any(NotificationDTO.class));
     }

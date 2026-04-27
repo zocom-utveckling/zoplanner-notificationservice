@@ -150,7 +150,8 @@ public class SqsEmailConsumer {
         } catch (Exception e) {
             log.error("Error processing message from SQS", e);
         }
-        try {
+        // Tog bort dubbelkod
+        /* try {
             BaseEvent baseEvent =
                     objectMapper.readValue(message.body(), BaseEvent.class);
 
@@ -184,7 +185,7 @@ public class SqsEmailConsumer {
         } catch (Exception e) {
             log.error("Error processing message from SQS", e);
         }
-    }
+    */ }
 
     void deleteMessage(Message message) {
         try {
