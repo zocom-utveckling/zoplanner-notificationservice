@@ -46,17 +46,17 @@ public class ScheduleUpdateConsumer {
 
     }
 private void schedule24Reminder(ScheduleUpdateEvent event){
-    log.info("24h flow triggered for event {}", event.getEventTime().atZone(ZoneId.of("Europe/Stockholm")));
-
-
-
-    Instant reminderTime = event.getEventTime().minus(24, ChronoUnit.HOURS);
-
-    scheduler.scheduleReminder(
-            reminderTime,
-            ()-> dispatcher.send24hReminder(event)
-
-    );
+//    log.info("24h flow triggered for event {}", event.getEventTime().atZone(ZoneId.of("Europe/Stockholm")));
+//
+//
+//
+//    Instant reminderTime = event.getEventTime().minus(24, ChronoUnit.HOURS);
+//
+//    scheduler.scheduleReminder(
+//            reminderTime,
+//            ()-> dispatcher.send24hReminder(event)
+//
+//    );
 }
 
     @Scheduled(cron = "0 0 12 ? * SUN")

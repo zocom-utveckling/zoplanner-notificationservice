@@ -4,6 +4,8 @@ import com.zoplanner.notification.event.ScheduleUpdateEvent;
 import com.zoplanner.notification.event.deleteevent.DeleteEvent;
 import com.zoplanner.notification.event.directmessage.DirectMessageEvent;
 import com.zoplanner.notification.event.newassignment.NewAssignmentEvent;
+import com.zoplanner.notification.event.reminderevent.ReminderEvent;
+import com.zoplanner.notification.model.Reminder;
 import com.zoplanner.notification.notification.email.EmailTemplateService;
 import com.zoplanner.notification.event.schedulecalendar.ScheduleCalendarEvent;
 import lombok.extern.slf4j.Slf4j;
@@ -228,6 +230,30 @@ public class SesNotificationPublisher implements NotificationPublisher {
                 recipient,
                 fromEmail
         );
+    }
+
+    public void publishReminder(Reminder r) {
+
+        requireFromEmail();
+
+        String recipient = safe(r.getConsultantEmail());
+
+        log.info("Preparing email to={}", recipient);
+
+        if (recipient.equals("-")) {
+            log.warn("Missing email on REMINDER");
+            return;
+        }
+
+        String subject = "ZoPlanner – Påminnelse";
+
+        String htmlBody = templateService.renderReminderHtml(r);
+        String textBody = templateService.renderReminderText(r);
+
+        SendEmailResponse response = sendEmail(recipient, subject, htmlBody, textBody);
+        log.info("Email sent messageId={} to={}",
+                response.messageId(),
+                recipient);
     }
 
 

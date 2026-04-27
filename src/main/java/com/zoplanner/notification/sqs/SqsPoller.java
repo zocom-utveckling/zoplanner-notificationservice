@@ -5,9 +5,11 @@ import com.zoplanner.notification.event.BaseEvent;
 import com.zoplanner.notification.event.ScheduleUpdateEvent;
 import com.zoplanner.notification.event.deleteevent.DeleteEvent;
 import com.zoplanner.notification.event.newassignment.NewAssignmentEvent;
+import com.zoplanner.notification.event.reminderevent.ReminderEvent;
 import com.zoplanner.notification.notification.NotificationPublisher;
 import com.zoplanner.notification.event.directmessage.DirectMessageEvent;
 import com.zoplanner.notification.event.schedulecalendar.ScheduleCalendarEvent;
+import com.zoplanner.notification.service.ReminderService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -32,6 +34,8 @@ public class SqsPoller {
     private final NotificationPublisher notificationPublisher;
     private final int maxMessages;
     private final int waitTimeSeconds;
+    private final ReminderService reminderService;
+
 
     public SqsPoller(
             SqsClient sqsClient,
@@ -40,7 +44,8 @@ public class SqsPoller {
             @Value("${aws.sqs.queue.url:}") String queueUrl,
             @Value("${aws.sqs.polling.enabled:true}") boolean pollingEnabled,
             @Value("${aws.sqs.max.messages:10}") int maxMessages,
-            @Value("${aws.sqs.wait.time.seconds:20}") int waitTimeSeconds
+            @Value("${aws.sqs.wait.time.seconds:20}") int waitTimeSeconds,
+            ReminderService reminderService
     ) {
         this.sqsClient = sqsClient;
         this.objectMapper = objectMapper;
@@ -49,6 +54,7 @@ public class SqsPoller {
         this.notificationPublisher = notificationPublisher;
         this.maxMessages = maxMessages;
         this.waitTimeSeconds = waitTimeSeconds;
+        this.reminderService = reminderService;
     }
 
     @Scheduled(fixedDelayString = "${aws.sqs.polling.delay.ms:5000}")
@@ -171,6 +177,23 @@ public class SqsPoller {
                             safe(String.valueOf(event.eventId())));
 
                     notificationPublisher.publishAssignmentDeleted(event);
+
+                    deleteMessage(message);
+                }
+
+                case "REMINDER_CREATED", "REMINDER" -> {
+
+                    ReminderEvent event =
+                            objectMapper.readValue(payloadJson, ReminderEvent.class);
+
+                    log.info("Received REMINDER from SQS messageId={} email={} sendAt={}",
+                            message.messageId(),
+                            event.teacherEmail(),
+                            event.sendAt());
+
+                    reminderService.saveReminder(event);
+
+                    log.info("Saved REMINDER to DB for email={}", event.teacherEmail());
 
                     deleteMessage(message);
                 }

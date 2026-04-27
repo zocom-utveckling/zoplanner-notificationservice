@@ -4,8 +4,10 @@ import com.zoplanner.notification.event.ScheduleUpdateEvent;
 import com.zoplanner.notification.event.deleteevent.DeleteEvent;
 import com.zoplanner.notification.event.directmessage.DirectMessageEvent;
 import com.zoplanner.notification.event.newassignment.NewAssignmentEvent;
+import com.zoplanner.notification.event.reminderevent.ReminderEvent;
 import com.zoplanner.notification.event.schedulecalendar.ScheduleCalendarDay;
 import com.zoplanner.notification.event.schedulecalendar.ScheduleCalendarEvent;
+import com.zoplanner.notification.model.Reminder;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Service;
 import java.nio.charset.StandardCharsets;
@@ -315,6 +317,30 @@ public class EmailTemplateService {
                 safe(e.timestamp() != null ? e.timestamp().toString() : "-")
         );
     }
+    public String renderReminderHtml(Reminder r){
+
+        String html = loadTemplate("email/reminder.html");
+
+        return html
+                .replace("{{subject}}", "Påminnelse")
+                .replace("{{message}}", safe(r.getMessage()))
+                .replace("{{ctaUrl}}", "https://zoplanner.com");
+    }
+    public String renderReminderText(Reminder r){
+
+        return """
+            Påminnelse
+            
+            Meddelande:
+            %s
+            
+            ZoPlanner:
+            https://zoplanner.com
+            """.formatted(
+                safe(r.getMessage())
+        );
+    }
+
 
 
     private String safeHtml(String s) {
